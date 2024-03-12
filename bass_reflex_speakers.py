@@ -163,9 +163,7 @@ class BassReflexEnclosure:
 
         return Za1
 
-    def calculate_box_impedance_for_rectangular_piston_Z11(self, f):
-        "Calculate the box impedance based on equation 7.131 for rectangular loudspeaker."
-
+    def calculate_box_impedance_for_rectangular_piston_Zxy(self, f, y1, y2):
         k = (2 * np.pi * f / SOUND_CELERITY) * (
             (1 + self.a3 * (self.R_f / f) ** self.b3)
             - 1j * self.a4 * (self.R_f / f) ** self.b4
@@ -183,8 +181,8 @@ class BassReflexEnclosure:
             term1 = (
                 (k)
                 / (k0n * n**2)
-                * np.cos(n * np.pi * self.y1 / self.ly)
-                * np.cos(n * np.pi * self.y1 / self.ly)
+                * np.cos(n * np.pi * y1 / self.ly)
+                * np.cos(n * np.pi * y2 / self.ly)
                 * np.sin((n * np.pi * self.b1) / (2 * self.ly))
                 * np.sin((n * np.pi * self.b1) / (2 * self.ly))
             )
@@ -224,106 +222,10 @@ class BassReflexEnclosure:
                     / (kmn * m**2 * n**2)
                     * np.sin(m * np.pi * self.a1 / self.lx)
                     * np.sin(n * np.pi * self.a1 / self.lx)
-                    * np.cos((m * np.pi * self.y1) / (self.ly))
+                    * np.cos((m * np.pi * y1) / (self.ly))
                 )
                 term2 = (
-                    np.cos(n * np.pi * self.y1 / self.ly)
-                    * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                    * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                )
-                term3 = (
-                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * self.lz)
-                ) / (
-                    1
-                    + 1j
-                    * ((kmn * Zs) / (k * R_0 * SOUND_CELERITY))
-                    * np.tan(kmn * self.lz)
-                )
-
-            sum3 += term1 * term2 * term3
-
-        Z11 = (
-            R_0
-            * SOUND_CELERITY
-            * (
-                1
-                / (self.lx * self.ly)
-                * (
-                    ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * self.lz))
-                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz)))
-                )
-                + (8 * self.ly) / (np.pi**2 * self.b1 * self.b1 * self.lx) * sum1
-                + (2 * self.lx) / (np.pi**2 * self.a1 * self.a1 * self.ly) * sum2
-                + (16 * self.lx * self.ly)
-                / (np.pi**4 * self.a1 * self.a1 * self.b1 * self.b1)
-                * sum3
-            )
-        )
-        return Z11
-
-    def calculate_box_impedance_for_rectangular_piston_Z12(self, f):
-        k = (2 * np.pi * f / SOUND_CELERITY) * (
-            (1 + self.a3 * (self.R_f / f) ** self.b3)
-            - 1j * self.a4 * (self.R_f / f) ** self.b4
-        )
-        Zs = R_0 * SOUND_CELERITY + self.P_0 / (1j * 2 * np.pi * f * self.d)
-
-        sum1 = 0
-        sum2 = 0
-        sum3 = 0
-
-        for n in range(1, self.truncation_limit + 1):
-            k0n = np.sqrt(
-                k**2 - (0 * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-            )
-            term1 = (
-                (k)
-                / (k0n * n**2)
-                * np.cos(n * np.pi * self.y1 / self.ly)
-                * np.cos(n * np.pi * self.y2 / self.ly)
-                * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-            )
-            term2 = (
-                (k0n * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(k0n * self.lz)
-            ) / (
-                1
-                + 1j * ((k0n * Zs) / (k * R_0 * SOUND_CELERITY)) * np.tan(k0n * self.lz)
-            )
-            sum1 += term1 * term2
-
-        for m in range(1, self.truncation_limit + 1):
-            km0 = np.sqrt(
-                k**2 - (2 * m * np.pi / self.lx) ** 2 - (0 * np.pi / self.ly) ** 2
-            )
-            term1 = (
-                (k)
-                / (km0 * m**2)
-                * np.sin(m * np.pi * self.a1 / self.lx)
-                * np.sin(m * np.pi * self.a1 / self.lx)
-            )
-            term2 = (
-                (km0 * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(km0 * self.lz)
-            ) / (
-                1
-                + 1j * ((km0 * Zs) / (k * R_0 * SOUND_CELERITY)) * np.tan(km0 * self.lz)
-            )
-            sum2 += term1 * term2
-
-        for m in range(1, self.truncation_limit + 1):
-            for n in range(1, self.truncation_limit + 1):
-                kmn = np.sqrt(
-                    k**2 - (2 * m * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-                )
-                term1 = (
-                    (k)
-                    / (kmn * m**2 * n**2)
-                    * np.sin(m * np.pi * self.a1 / self.lx)
-                    * np.sin(n * np.pi * self.a1 / self.lx)
-                    * np.cos((m * np.pi * self.y1) / (self.ly))
-                )
-                term2 = (
-                    np.cos(n * np.pi * self.y2 / self.ly)
+                    np.cos(n * np.pi * y2 / self.ly)
                     * np.sin((n * np.pi * self.b1) / (2 * self.ly))
                     * np.sin((n * np.pi * self.b1) / (2 * self.ly))
                 )
@@ -356,102 +258,7 @@ class BassReflexEnclosure:
             )
         )
         return Z12
-
-    def calculate_box_impedance_for_rectangular_piston_Z22(self, f):
-        k = (2 * np.pi * f / SOUND_CELERITY) * (
-            (1 + self.a3 * (self.R_f / f) ** self.b3)
-            - 1j * self.a4 * (self.R_f / f) ** self.b4
-        )
-        Zs = R_0 * SOUND_CELERITY + self.P_0 / (1j * 2 * np.pi * f * self.d)
-
-        sum1 = 0
-        sum2 = 0
-        sum3 = 0
-
-        for n in range(1, self.truncation_limit + 1):
-            k0n = np.sqrt(
-                k**2 - (0 * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-            )
-            term1 = (
-                (k)
-                / (k0n * n**2)
-                * np.cos(n * np.pi * self.y2 / self.ly)
-                * np.cos(n * np.pi * self.y2 / self.ly)
-                * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-            )
-            term2 = (
-                (k0n * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(k0n * self.lz)
-            ) / (
-                1
-                + 1j * ((k0n * Zs) / (k * R_0 * SOUND_CELERITY)) * np.tan(k0n * self.lz)
-            )
-            sum1 += term1 * term2
-
-        for m in range(1, self.truncation_limit + 1):
-            km0 = np.sqrt(
-                k**2 - (2 * m * np.pi / self.lx) ** 2 - (0 * np.pi / self.ly) ** 2
-            )
-            term1 = (
-                (k)
-                / (km0 * m**2)
-                * np.sin(m * np.pi * self.a1 / self.lx)
-                * np.sin(m * np.pi * self.a1 / self.lx)
-            )
-            term2 = (
-                (km0 * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(km0 * self.lz)
-            ) / (
-                1
-                + 1j * ((km0 * Zs) / (k * R_0 * SOUND_CELERITY)) * np.tan(km0 * self.lz)
-            )
-            sum2 += term1 * term2
-
-        for m in range(1, self.truncation_limit + 1):
-            for n in range(1, self.truncation_limit + 1):
-                kmn = np.sqrt(
-                    k**2 - (2 * m * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-                )
-                term1 = (
-                    (k)
-                    / (kmn * m**2 * n**2)
-                    * np.sin(m * np.pi * self.a1 / self.lx)
-                    * np.sin(n * np.pi * self.a1 / self.lx)
-                    * np.cos((m * np.pi * self.y2) / (self.ly))
-                )
-                term2 = (
-                    np.cos(n * np.pi * self.y2 / self.ly)
-                    * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                    * np.sin((n * np.pi * self.b1) / (2 * self.ly))
-                )
-                term3 = (
-                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * self.lz)
-                ) / (
-                    1
-                    + 1j
-                    * ((kmn * Zs) / (k * R_0 * SOUND_CELERITY))
-                    * np.tan(kmn * self.lz)
-                )
-
-            sum3 += term1 * term2 * term3
-
-        Z22 = (
-            R_0
-            * SOUND_CELERITY
-            * (
-                1
-                / (self.lx * self.ly)
-                * (
-                    ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * self.lz))
-                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz)))
-                )
-                + (8 * self.ly) / (np.pi**2 * self.b1 * self.b1 * self.lx) * sum1
-                + (2 * self.lx) / (np.pi**2 * self.a1 * self.a1 * self.ly) * sum2
-                + (16 * self.lx * self.ly)
-                / (np.pi**4 * self.a1 * self.a1 * self.b1 * self.b1)
-                * sum3
-            )
-        )
-        return Z22
+    
 
     def calculate_box_impedance_for_circular_piston_Zxy(self, f , x1, x2, y1, y2):
         "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
@@ -659,14 +466,14 @@ class BassReflexEnclosure:
             Zp = (R_0 * SOUND_CELERITY * ξ) / (self.Sp)
 
             if self.speaker_type == "rectangular" and self.port_shape == "rectangular":
-                Z11 = self.calculate_box_impedance_for_rectangular_piston_Z11(
-                    frequencies[i]
+                Z11 = self.calculate_box_impedance_for_rectangular_piston_Zxy(
+                    frequencies[i], self.y1, self.y1
                 )
-                Z12 = self.calculate_box_impedance_for_rectangular_piston_Z12(
-                    frequencies[i]
+                Z12 = self.calculate_box_impedance_for_rectangular_piston_Zxy(
+                    frequencies[i], self.y1, self.y2
                 )
-                Z22 = self.calculate_box_impedance_for_rectangular_piston_Z22(
-                    frequencies[i]
+                Z22 = self.calculate_box_impedance_for_rectangular_piston_Zxy(
+                    frequencies[i], self.y2, self.y2
                 )
                 Z21 = Z12
 
