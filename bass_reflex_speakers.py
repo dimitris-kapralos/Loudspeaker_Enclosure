@@ -453,7 +453,7 @@ class BassReflexEnclosure:
         )
         return Z22
 
-    def calculate_box_impedance_for_circular_piston_Z11(self, f):
+    def calculate_box_impedance_for_circular_piston_Zxy(self, f , x1, x2, y1, y2):
         "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
 
         # wave number k equation 7.11
@@ -489,8 +489,8 @@ class BassReflexEnclosure:
                     )
                 )
                 term3 = (
-                    np.cos((m * np.pi * self.x1) / self.lx)
-                    * np.cos((n * np.pi * self.y1) / self.ly)
+                    np.cos((m * np.pi * x1) / self.lx)
+                    * np.cos((n * np.pi * y1) / self.ly)
                     * j1(
                         (
                             np.pi
@@ -501,8 +501,8 @@ class BassReflexEnclosure:
                     )
                 )
                 term4 = (
-                    np.cos((m * np.pi * self.x1) / self.lx)
-                    * np.cos((n * np.pi * self.y1) / self.ly)
+                    np.cos((m * np.pi * x2) / self.lx)
+                    * np.cos((n * np.pi * y2) / self.ly)
                     * j1(
                         (
                             np.pi
@@ -514,7 +514,7 @@ class BassReflexEnclosure:
                 )
                 sum_mn += term1 * term2 * term3 * term4
 
-        Z11 = (
+        Zxy = (
             R_0
             * SOUND_CELERITY
             * (
@@ -528,163 +528,9 @@ class BassReflexEnclosure:
             )
         ) / self.lsp.Sd**2
 
-        return Z11
+        return Zxy
 
-    # box impedance based on equation 7.131
-    def calculate_box_impedance_for_circular_piston_Z22(self, f):
-        "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
-
-        # wave number k equation 7.11
-        k = (2 * np.pi * f / SOUND_CELERITY) * (
-            (1 + self.a3 * (self.R_f / f) ** self.b3)
-            - 1j * self.a4 * (self.R_f / f) ** self.b4
-        )
-
-        Zs = R_0 * SOUND_CELERITY + self.P_0 / (1j * 2 * np.pi * f * self.d)
-
-        sum_mn = 0
-        for m in range(self.truncation_limit + 1):
-            for n in range(self.truncation_limit + 1):
-                kmn = np.sqrt(
-                    k**2 - (m * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-                )
-                delta_m0 = 1 if m == 0 else 0
-                delta_n0 = 1 if n == 0 else 0
-                term1 = (
-                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * self.lz)
-                ) / (
-                    1
-                    + 1j
-                    * ((kmn * Zs) / (k * R_0 * SOUND_CELERITY))
-                    * np.tan(kmn * self.lz)
-                )
-                term2 = (
-                    (2 - delta_m0)
-                    * (2 - delta_n0)
-                    / (
-                        kmn * (n**2 * self.lx**2 + m**2 * self.ly**2)
-                        + delta_m0 * delta_n0
-                    )
-                )
-                term3 = (
-                    np.cos((m * np.pi * self.x2) / self.lx)
-                    * np.cos((n * np.pi * self.y2) / self.ly)
-                    * j1(
-                        (
-                            np.pi
-                            * self.lsp.a
-                            * np.sqrt(n**2 * self.lx**2 + m**2 * self.ly**2)
-                        )
-                        / (self.lx * self.ly)
-                    )
-                )
-                term4 = (
-                    np.cos((m * np.pi * self.x2) / self.lx)
-                    * np.cos((n * np.pi * self.y2) / self.ly)
-                    * j1(
-                        (
-                            np.pi
-                            * self.lsp.a
-                            * np.sqrt(n**2 * self.lx**2 + m**2 * self.ly**2)
-                        )
-                        / (self.lx * self.ly)
-                    )
-                )
-                sum_mn += term1 * term2 * term3 * term4
-
-        Z22 = (
-            R_0
-            * SOUND_CELERITY
-            * (
-                (self.lsp.Sd * self.lsp.Sd)
-                / (self.lx * self.ly)
-                * (
-                    ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * self.lz))
-                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz)))
-                )
-                + 4 * k * self.lsp.a * self.lsp.a * self.lx * self.ly * sum_mn
-            )
-        ) / self.lsp.Sd**2
-
-        return Z22
-
-    # box impedance based on equation 7.131
-    def calculate_box_impedance_for_circular_piston_Z12(self, f):
-        "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
-
-        # wave number k equation 7.11
-        k = (2 * np.pi * f / SOUND_CELERITY) * (
-            (1 + self.a3 * (self.R_f / f) ** self.b3)
-            - 1j * self.a4 * (self.R_f / f) ** self.b4
-        )
-
-        Zs = R_0 * SOUND_CELERITY + self.P_0 / (1j * 2 * np.pi * f * self.d)
-
-        sum_mn = 0
-        for m in range(self.truncation_limit + 1):
-            for n in range(self.truncation_limit + 1):
-                kmn = np.sqrt(
-                    k**2 - (m * np.pi / self.lx) ** 2 - (n * np.pi / self.ly) ** 2
-                )
-                delta_m0 = 1 if m == 0 else 0
-                delta_n0 = 1 if n == 0 else 0
-                term1 = (
-                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * self.lz)
-                ) / (
-                    1
-                    + 1j
-                    * ((kmn * Zs) / (k * R_0 * SOUND_CELERITY))
-                    * np.tan(kmn * self.lz)
-                )
-                term2 = (
-                    (2 - delta_m0)
-                    * (2 - delta_n0)
-                    / (
-                        kmn * (n**2 * self.lx**2 + m**2 * self.ly**2)
-                        + delta_m0 * delta_n0
-                    )
-                )
-                term3 = (
-                    np.cos((m * np.pi * self.x1) / self.lx)
-                    * np.cos((n * np.pi * self.y1) / self.ly)
-                    * j1(
-                        (
-                            np.pi
-                            * self.lsp.a
-                            * np.sqrt(n**2 * self.lx**2 + m**2 * self.ly**2)
-                        )
-                        / (self.lx * self.ly)
-                    )
-                )
-                term4 = (
-                    np.cos((m * np.pi * self.x2) / self.lx)
-                    * np.cos((n * np.pi * self.y2) / self.ly)
-                    * j1(
-                        (
-                            np.pi
-                            * self.lsp.a
-                            * np.sqrt(n**2 * self.lx**2 + m**2 * self.ly**2)
-                        )
-                        / (self.lx * self.ly)
-                    )
-                )
-                sum_mn += term1 * term2 * term3 * term4
-
-        Z12 = (
-            R_0
-            * SOUND_CELERITY
-            * (
-                (self.lsp.Sd * self.lsp.Sd)
-                / (self.lx * self.ly)
-                * (
-                    ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * self.lz))
-                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz)))
-                )
-                + 4 * k * self.lsp.a * self.lsp.a * self.lx * self.ly * sum_mn
-            )
-        ) / self.lsp.Sd**2
-
-        return Z12
+    
 
     def calculate_port_impedance_Za2(self, f, r_d):
         "Calculate the rectangular port impedance based on equation 13.336 and 13.337."
@@ -832,14 +678,14 @@ class BassReflexEnclosure:
                 Z_a2 = self.calculate_port_impedance_Za2(frequencies[i], r_d)
 
             elif self.speaker_type == "circular" and self.port_shape == "rectangular":
-                Z11 = self.calculate_box_impedance_for_circular_piston_Z11(
-                    frequencies[i]
+                Z11 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i], self.x1, self.x1, self.y1, self.y1 
                 )
-                Z12 = self.calculate_box_impedance_for_circular_piston_Z12(
-                    frequencies[i]
+                Z12 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i] , self.x1, self.x2, self.y1, self.y2
                 )
-                Z22 = self.calculate_box_impedance_for_circular_piston_Z22(
-                    frequencies[i]
+                Z22 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i] , self.x2, self.x2, self.y2, self.y2
                 )
                 Z21 = Z12
 
@@ -851,14 +697,14 @@ class BassReflexEnclosure:
                 Z_a2 = self.calculate_port_impedance_Za2(frequencies[i], r_d)
 
             elif self.speaker_type == "circular" and self.port_shape == "circular":
-                Z11 = self.calculate_box_impedance_for_circular_piston_Z11(
-                    frequencies[i]
+                Z11 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i], self.x1, self.x1, self.y1, self.y1 
                 )
-                Z12 = self.calculate_box_impedance_for_circular_piston_Z12(
-                    frequencies[i]
+                Z12 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i] , self.x1, self.x2, self.y1, self.y2
                 )
-                Z22 = self.calculate_box_impedance_for_circular_piston_Z22(
-                    frequencies[i]
+                Z22 = self.calculate_box_impedance_for_circular_piston_Zxy(
+                    frequencies[i] , self.x2, self.x2, self.y2, self.y2
                 )
                 Z21 = Z12
 
