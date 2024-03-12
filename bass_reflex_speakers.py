@@ -526,10 +526,10 @@ class BassReflexEnclosure:
             b21 = 1 / Z21
             b22 = Z22 / Z21
 
-            C = np.array([[1, 1 * Z_e], [0, 1]])
+            C = np.array([[1, 1/2 * Z_e], [0, 1]])
             E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
-            D = np.array([[1, 1 * Z_md], [0, 1]])
-            M = np.array([[1 * self.lsp.Sd, 0], [0, 1 / self.lsp.Sd]])
+            D = np.array([[1, 2 * Z_md], [0, 1]])
+            M = np.array([[2 * self.lsp.Sd, 0], [0, 1 / (2*self.lsp.Sd)]])
             F = np.array([[1, 1 * Z_a1], [0, 1]])
             L = np.array([[1, 0], [1 / Ral, 1]])
             B = np.array([[b11, b12], [b21, b22]])
@@ -564,7 +564,7 @@ class BassReflexEnclosure:
 
             # ig = a21 * p9
 
-            U_ref = (1 * self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / (
+            U_ref = (2 * self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / (
                 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re
             )
 
