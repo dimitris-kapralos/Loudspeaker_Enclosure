@@ -82,125 +82,12 @@ print(R_f)
 
 
 
-# 2 diaphragms radiation impedance based on equation 13.339 and 13.345
-def calculate_Za1(f, a1, r_0, c, d1, d2,  truncation_limit):
-    k = (2 * np.pi * f / c) * ((1 + a3 *(R_f/f)**b3) -1j * a4 * (R_f/f)**b4)
-
-    # Calculate the Bessel and Struve functions
-    J1 = jv(1, k * a1) 
-    H1 = mpmath.struveh(1, k * a1) 
-
-    z11 = r_0 * c * ((1 - (J1**2/ (k * a1))) + 1j* (H1/ (k * a1))) 
-
-    # Calculate Z12
-    z12 = (2 * r_0 * c) / np.sqrt(np.pi)
-    sum_mn = 0
-    for m in range(truncation_limit+1):
-        for n in range(truncation_limit+1):
-            term1 = ((k * a1) / (k * d1)) ** m
-            term2 = ((k * a1) / (k * d1)) ** n
-            term3 = gamma(m + n + 0.5)
-            term4 = jv(m + 1, k * a1) * jv(n + 1, k * a1)
-            term5 = 1 / (np.math.factorial(m) * np.math.factorial(n))
-            term6 = spherical_jn(m + n, k * d1) + 1j * spherical_yn(m + n, k * d1)
-            sum_mn += term1 * term2 * term3 * term4 * term5 * term6
-    z12 *= sum_mn
-
-        # Calculate Z12
-    z13 = (2 * r_0 * c) / np.sqrt(np.pi)
-    sum_mn = 0
-    for m in range(truncation_limit+1):
-        for n in range(truncation_limit+1):
-            term1 = ((k * a1) / (k * d2)) ** m
-            term2 = ((k * a1) / (k * d2)) ** n
-            term3 = gamma(m + n + 0.5)
-            term4 = jv(m + 1, k * a1) * jv(n + 1, k * a1)
-            term5 = 1 / (np.math.factorial(m) * np.math.factorial(n))
-            term6 = spherical_jn(m + n, k * d2) + 1j * spherical_yn(m + n, k * d2)
-            sum_mn += term1 * term2 * term3 * term4 * term5 * term6
-    z13 *= sum_mn
-
-
-    Za1 =  (a1**2 * z11 + 2* a1 * a1 * z12 + 2* a1 * a1 * z13 ) / (a1**2 + a1** + a1**2)
-    return Za1
 
 
 
 
-# box impedance based on equation 7.131 
-def calculate_Z11(f, lz, a, r_0, c, lx, ly, truncation_limit):
-
-    # wave number k equation 7.11
-    k = (2 * np.pi * f / c) * ((1 + a3 *(R_f/f)**b3) -1j * a4 * (R_f/f)**b4)
-
-    Zs = r_0 * c + P_0/( 1j * 2 * np.pi * f * b)
-    
-    sum_mn = 0
-    for m in range(truncation_limit+1):
-        for n in range(truncation_limit+1):
-            kmn = np.sqrt(k**2 - (m*np.pi/lx)**2 - (n*np.pi/ly)**2)
-            delta_m0 = 1 if m == 0 else 0
-            delta_n0 = 1 if n == 0 else 0
-            term1 = ((kmn*Zs)/(k*r_0*c) + 1j * np.tan(kmn*lz)) / (1 + 1j * (( kmn*Zs)/(k*r_0*c)) * np.tan(kmn*lz))
-            term2 = (2 - delta_m0) * (2 - delta_n0) / (kmn * (n**2 * lx**2 + m**2 * ly**2) + delta_m0 * delta_n0)
-            term3 = np.cos((m*np.pi*x1)/lx) * np.cos((n*np.pi*y1)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            term4 = np.cos((m*np.pi*x1)/lx) * np.cos((n*np.pi*y1)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            sum_mn += term1 * term2 * term3 * term4 
-
-    Z11 = (r_0 * c * ( (Sd*Sd)/(lx*ly) * (((Zs/(r_0*c)) + 1j * np.tan(k*lz)) / (1 + 1j * ((Zs/(r_0*c)) * np.tan(k*lz)))) + 4 * k*a*a*lx*ly* sum_mn)) / Sd**2   
-    
-    return  Z11
 
 
-
-# box impedance based on equation 7.131 
-def calculate_Z22(f, lz, a, r_0, c, lx, ly, truncation_limit):
-
-    # wave number k equation 7.11
-    k = (2 * np.pi * f / c) * ((1 + a3 *(R_f/f)**b3) -1j * a4 * (R_f/f)**b4)
-
-    Zs = r_0 * c + P_0/( 1j * 2 * np.pi * f * b)
-    
-    sum_mn = 0
-    for m in range(truncation_limit+1):
-        for n in range(truncation_limit+1):
-            kmn = np.sqrt(k**2 - (m*np.pi/lx)**2 - (n*np.pi/ly)**2)
-            delta_m0 = 1 if m == 0 else 0
-            delta_n0 = 1 if n == 0 else 0
-            term1 = ((kmn*Zs)/(k*r_0*c) + 1j * np.tan(kmn*lz)) / (1 + 1j * (( kmn*Zs)/(k*r_0*c)) * np.tan(kmn*lz))
-            term2 = (2 - delta_m0) * (2 - delta_n0) / (kmn * (n**2 * lx**2 + m**2 * ly**2) + delta_m0 * delta_n0)
-            term3 = np.cos((m*np.pi*x2)/lx) * np.cos((n*np.pi*y2)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            term4 = np.cos((m*np.pi*x2)/lx) * np.cos((n*np.pi*y2)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            sum_mn += term1 * term2 * term3 * term4 
-
-    Z22 = (r_0 * c * ( (Sd*Sd)/(lx*ly) * (((Zs/(r_0*c)) + 1j * np.tan(k*lz)) / (1 + 1j * ((Zs/(r_0*c)) * np.tan(k*lz)))) + 4 * k*a*a*lx*ly* sum_mn)) / Sd**2   
-    
-    return  Z22
-
-
-# box impedance based on equation 7.131 
-def calculate_Z12(f, lz, a, r_0, c, lx, ly, truncation_limit):
-
-    # wave number k equation 7.11
-    k = (2 * np.pi * f / c) * ((1 + a3 *(R_f/f)**b3) -1j * a4 * (R_f/f)**b4)
-
-    Zs = r_0 * c + P_0/( 1j * 2 * np.pi * f * b)
-    
-    sum_mn = 0
-    for m in range(truncation_limit+1):
-        for n in range(truncation_limit+1):
-            kmn = np.sqrt(k**2 - (m*np.pi/lx)**2 - (n*np.pi/ly)**2)
-            delta_m0 = 1 if m == 0 else 0
-            delta_n0 = 1 if n == 0 else 0
-            term1 = ((kmn*Zs)/(k*r_0*c) + 1j * np.tan(kmn*lz)) / (1 + 1j * (( kmn*Zs)/(k*r_0*c)) * np.tan(kmn*lz))
-            term2 = (2 - delta_m0) * (2 - delta_n0) / (kmn * (n**2 * lx**2 + m**2 * ly**2) + delta_m0 * delta_n0)
-            term3 = np.cos((m*np.pi*x1)/lx) * np.cos((n*np.pi*y1)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            term4 = np.cos((m*np.pi*x2)/lx) * np.cos((n*np.pi*y2)/ly) * j1((np.pi * a * np.sqrt(n**2 * lx**2 + m**2 * ly**2))/(lx*ly))
-            sum_mn += term1 * term2 * term3 * term4 
-
-    Z12 = (r_0 * c * ( (Sd*Sd)/(lx*ly) * (((Zs/(r_0*c)) + 1j * np.tan(k*lz)) / (1 + 1j * ((Zs/(r_0*c)) * np.tan(k*lz)))) + 4 * k*a*a*lx*ly* sum_mn)) / Sd**2   
-    
-    return  Z12
 
 
 
@@ -292,13 +179,10 @@ for i in range(len(frequencies)):
     k = (2 * np.pi * frequencies[i] / c) * ((1 + a3 *(R_f/frequencies[i])**b3) - 1j * a4 * (R_f/frequencies[i])**b4)
     
     # Calculate the radiation impedance of the diaphragms
-    Z_a1 =  calculate_Za1(frequencies[i], a , r_0, c, d12, d23, truncation_limit)
+
 
     # Calculate the radiation impedance of the box
-    Z11 = calculate_Z11(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
-    Z12 = calculate_Z12(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
-    Z22 = calculate_Z22(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
-    Z21 = calculate_Z12(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
+
 
     # 2-port network parameters
     b11 = (Z11 / Z21)
