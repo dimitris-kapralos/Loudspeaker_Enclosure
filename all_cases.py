@@ -70,7 +70,7 @@ class BassReflexEnclosure:
         self.lsp = Loudspeaker(lsp_par)
 
         self.fb = 36  # tuning frequency
-        self.Vab1 = 12.58
+        self.Vab1 = 12.58 # total volume of the enclosure in m^3
         self.Vab2 = 25.2
         self.Vab3 = 37.750
         self.Vab4 = 50.32
@@ -116,29 +116,29 @@ class BassReflexEnclosure:
         self.lz1 = 0.210  # depth of the enclosure
         
         self.lx2 = 0.15  # width of the enclosure
-        self.ly2 = 0.63
-        self.lz2 = 0.192
+        self.ly2 = 0.63 # height of the enclosure
+        self.lz2 = 0.192 # depth of the enclosure
         
         self.lx3 = 0.2  # width of the enclosure
-        self.ly3 = 0.671
-        self.lz3 = 0.192
+        self.ly3 = 0.671 # height of the enclosure
+        self.lz3 = 0.192 # depth of the enclosure
         
         self.lx4 = 0.2  # width of the enclosure
-        self.ly4 = 0.894
-        self.lz4 = 0.192
+        self.ly4 = 0.894 # height of the enclosure
+        self.lz4 = 0.192 # depth of the enclosure
 
         self.x1 = 0.075  # distance from the center of the diaphragm to the box wall
         self.x2 = 0.1  # distance from the center of the diaphragm to the box wall
         self.x3 = 0.1  # distance from the center of the diaphragm to the box wall
         self.x4 = 0.1
         self.y1 = 0.15  # distance from the center of the diaphragm to the box wall
-        self.yp1 = 0.3  # distance from the center of the diaphragm to the box wall
-        self.y2 = 0.095
-        self.yp2 = 0.52
-        self.y3 = 0.32
-        self.yp3 = 0.6
-        self.y4 = 0.32
-        self.yp4 = 0.8
+        self.yp1 = 0.3  # distance from the center of the port to the box wall
+        self.y2 = 0.095 # distance from the center of the diaphragms to the box wall
+        self.yp2 = 0.52 # distance from the center of the port to the box wall
+        self.y3 = 0.32 # distance from the center of the diaphragms to the box wall
+        self.yp3 = 0.6 # distance from the center of the port to the box wall
+        self.y4 = 0.32 # distance from the center of the diaphragms to the box wall
+        self.yp4 = 0.8 # distance from the center of the port to the box wall
 
         self.a2 = 0.15  # width of the port
         self.b2 = 0.034  # height of the port
