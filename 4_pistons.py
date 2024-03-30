@@ -14,7 +14,7 @@ fb = 36  # tuning frequency in Hz
 Sd = 0.012  # diaphragm area in m^2
 Vas = 24  # equivalent volume of compliance in m^3
 Qts = 0.41  # total Q factor
-Vab = 25.2  # volume of the enclosure in m^3
+Vab = 50.32  # volume of the enclosure in m^3
 Cms = 0.00119  # mechanical compliance in m/N
 Mms = 0.0156  # mechanical mass in kg
 Bl = 6.59  # force factor in Tm
@@ -27,7 +27,7 @@ Qa = 49  # acoustic Q factor of the box
 Rap = 238  # acoustic resistance of the port in N.s/m^5
 Qp = 101  # acoustic Q factor of the port
 r_0 = 1.18  # air density in kg/m^3
-t = 0.25  # length of the port in m
+t = 0.32  # length of the port in m
 Sp = 0.0071  # area of the port in m^2
 Rms = 1 / Qms * np.sqrt(Mms / Cms)  # mechanical resistance in N.s/m
 
@@ -207,6 +207,21 @@ def gmn(m, n, q):
 
     return first_term + second_term
 
+# Calculate simplified box impedance based on equations 7.2-7.7
+def calculate_box_impedance_Zab(f):
+    Mab = 0.4*r_0/(np.pi * a)
+
+    CAA = (Va*10**(-3))/(1.4*P_0)
+    CAM = (Vm*10**(-3))/P_0
+    
+    Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+    
+    Rab = 2386/ ((1+ Va/(1.4*Vm))**2 + (2*np.pi*f)**2 *2386**2 * CAA**2)
+    
+    Zab = (Rab + 1j*Xab)
+    
+    return Zab
+
 
 # Define a range of frequencies
 octave_steps = 24
@@ -241,8 +256,12 @@ for i in range(len(frequencies)):
     # Calculate the diaphragm radiation impedance
     R_s = r_0 * c * k**2 * a**2
     X_s = (r_0 * c * 8 * k * a) / (3 * np.pi)
-    Z_a1 = R_s + 1j * X_s
+    Z_a1 = (R_s + 1j * X_s) 
+    
+    # Calculate the simplified box impedance
+    Zab = calculate_box_impedance_Zab(frequencies[i])
 
+    # Calculate the box impedance 
     Z11 = calculate_box_impedance_for_circular_piston_Zxy(
         frequencies[i], a, a, x1, x1, y1, y1, Sd, Sd
     )
@@ -284,15 +303,16 @@ for i in range(len(frequencies)):
     # r_d = r_0 * (1 - (Q( kv * ap )) / (1 - 0.5 * Bu *kv**2 * ap**2 * Q(kv * ap) )) ** (-1)
     # r_d = (8*m)/(1j * 2 * np.pi * frequencies[i] * (1 + 4 * Bu) * a_2*b_2)
 
-    # Calculate the impedance of the port
+    # Calculate the impedance of a rectangular port
     Za2 = calculate_Za2(frequencies[i], r_d, lx, ly, r_0, c, truncation_limit)
 
     C = np.array([[1, 1 / 4 * Z_e], [0, 1]])
     E = np.array([[0, 1 * Bl], [1 / (1 * Bl), 0]])
     D = np.array([[1, 4 * Z_md], [0, 1]])
     M = np.array([[4 * Sd, 0], [0, 1 / (4 * Sd)]])
-    F = np.array([[1, Z_a1], [0, 1]])
+    F = np.array([[1, 4*Z_a1], [0, 1]])
     L = np.array([[1, 0], [1 / Ral, 1]])
+    #B = np.array([[1, 0], [1 / Zab, 1]])
     B = np.array([[b11, b12], [b21, b22]])
     P = np.array(
         [
