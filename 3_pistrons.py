@@ -1,8 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import scipy.special
-import mpmath
-from scipy.special import j1, gamma, jv
+from scipy.special import j1, gamma
 
 
 Re = 6.27  # electrical resistance in ohms
@@ -308,6 +307,11 @@ for i in range(len(frequencies)):
 
     # Calculate the impedance of rectangular port
     Za2 = calculate_Za2(frequencies[i], r_d, lx, ly, r_0, c, truncation_limit)
+    
+    # Calculate the impedance of a circular port
+    R_sp = r_0 * c * k**2 * ap**2
+    X_sp = (r_0 * c * 8 * k * ap) / (3 * np.pi)
+    Za2 = (R_sp + 1j * X_sp) 
 
     C = np.array([[1, 1 / 3 * Z_e], [0, 1]])
     E = np.array([[0, 1 * Bl], [1 / (1 * Bl), 0]])
