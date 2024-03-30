@@ -304,7 +304,12 @@ for i in range(len(frequencies)):
     # r_d = (8*m)/(1j * 2 * np.pi * frequencies[i] * (1 + 4 * Bu) * a_2*b_2)
 
     # Calculate the impedance of a rectangular port
-    Za2 = calculate_Za2(frequencies[i], r_d, lx, ly, r_0, c, truncation_limit)
+    #Za2 = calculate_Za2(frequencies[i], r_d, lx, ly, r_0, c, truncation_limit)
+    
+    # Calculate the impedance of a circular port
+    R_sp = r_0 * c * k**2 * a**2
+    X_sp = (r_0 * c * 8 * k * a) / (3 * np.pi)
+    Za2 = (R_sp + 1j * X_sp) 
 
     C = np.array([[1, 1 / 4 * Z_e], [0, 1]])
     E = np.array([[0, 1 * Bl], [1 / (1 * Bl), 0]])
