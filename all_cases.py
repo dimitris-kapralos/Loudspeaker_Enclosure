@@ -2,7 +2,8 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.special
-from scipy.special import gamma, j1
+import mpmath
+from scipy.special import gamma, j1, jv, spherical_jn, spherical_yn
 
 
 # Speed of sound propagation in air, m/s
@@ -112,7 +113,7 @@ class BassReflexEnclosure:
 
         self.lx1 = 0.15  # width of the enclosure
         self.ly1 = 0.401  # height of the enclosure
-        self.lz1 = 0.228  # depth of the enclosure
+        self.lz1 = 0.210  # depth of the enclosure
         
         self.lx2 = 0.15  # width of the enclosure
         self.ly2 = 0.63
@@ -160,14 +161,98 @@ class BassReflexEnclosure:
             + (6 / np.pi) * (1 - self.porosity)
         )
         
+    # Calculate the simplified box impedance based on equation 7.2-7.7         
+    def calculate_box_impedance_Zab(self, f):
+        if self.number_of_speakers == "one" :
+            Mab = 0.53*R_0/(np.pi * self.lsp.a)
+                
+            CAA = (self.Va1*10**(-3))/(1.4*self.P_0)
+            CAM = (self.Vm1*10**(-3))/self.P_0    
+            
+            Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+            
+            Rab = 7111/ ((1+ self.Va1/(1.4*self.Vm1))**2 + (2*np.pi*f)**2 *7111**2 * CAA**2)
+                
+        elif self.number_of_speakers == "two" :
+            Mab = 0.53*R_0/(np.pi * self.lsp.a)
+
+            CAA = (self.Va2*10**(-3))/(1.4*self.P_0)
+            CAM = (self.Vm2*10**(-3))/self.P_0
+            
+            Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+            
+            Rab = 4480/ ((1+ self.Va2/(1.4*self.Vm2))**2 + (2*np.pi*f)**2 *4480**2 * CAA**2)
+            #print(Rab)
+            
+        elif self.number_of_speakers == "three" :
+            Mab = 0.53*R_0/(np.pi * self.lsp.a)
+            CAA = (self.Va3*10**(-3))/(1.4*self.P_0)
+            CAM = (self.Vm3*10**(-3))/self.P_0
+            
+            Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+            
+            Rab = 3179/ ((1+ self.Va3/(1.4*self.Vm3))**2 + (2*np.pi*f)**2 *3179**2 * CAA**2)
+            
+        elif self.number_of_speakers == "four" :
+            Mab = 0.53*R_0/(np.pi * self.lsp.a)
+            CAA = (self.Va4*10**(-3))/(1.4*self.P_0)
+            CAM = (self.Vm4*10**(-3))/self.P_0
+            
+            Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+            
+            Rab = 2386/ ((1+ self.Va4/(1.4*self.Vm4))**2 + (2*np.pi*f)**2 *2386**2 * CAA**2)
+        
+        Zab = (Rab + 1j*Xab)
+        
+        
+        return Zab
+        
+    # Calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method    
+    def calculate_Za1(self, f,):
+        k = (2 * np.pi * f / SOUND_CELERITY) * ((1 + self.a3 *(self.R_f/f)**self.b3) -1j * self.a4 * (self.R_f/f)**self.b4)
+
+        # Calculate the Bessel and Struve functions
+        J1 = jv(1, k * self.lsp.a) 
+        H1 = mpmath.struveh(1, k * self.lsp.a) 
+
+        z11 = R_0 * SOUND_CELERITY * ((1 - (J1**2/ (k * self.lsp.a))) + 1j* (H1/ (k * self.lsp.a))) 
+
+        # Calculate Z12
+        z12 =  (2 * R_0 * SOUND_CELERITY) / np.sqrt(np.pi)
+        z13  = (2 * R_0 * SOUND_CELERITY) / np.sqrt(np.pi)
+        z14 = (2 * R_0 * SOUND_CELERITY) / np.sqrt(np.pi)
+        sum_mn = 0
+        for m in range(self.truncation_limit+1):
+            for n in range(self.truncation_limit+1):
+                term1 = ((k * self.lsp.a) / (k * 0.2)) ** m
+                term2 = ((k * self.lsp.a) / (k * 0.2)) ** n
+                term3 = gamma(m + n + 0.5)
+                term4 = jv(m + 1, k * self.lsp.a) * jv(n + 1, k * self.lsp.a)
+                term5 = 1 / (np.math.factorial(m) * np.math.factorial(n))
+                term6 = spherical_jn(m + n, k * 0.2) + 1j * spherical_yn(m + n, k * 0.2)
+                sum_mn += term1 * term2 * term3 * term4 * term5 * term6
+        z12 *= sum_mn 
+        z13 *= sum_mn  
+        z14 *= sum_mn
+        
+        if self.number_of_speakers == "one" :
+            Za1 =  self.lsp.a**2 * z11 /  self.lsp.a**2
+            
+        elif self.number_of_speakers == "two" :
+            Za1 =  (self.lsp.a**2 * z11 + 2* self.lsp.a * self.lsp.a * z12 ) / (self.lsp.a**2 + self.lsp.a**2)
+
+        elif self.number_of_speakers == "three":    
+            Za1 =  (self.lsp.a**2 * z11 + 2* self.lsp.a * self.lsp.a * z12 + 2* self.lsp.a * self.lsp.a * z13 ) / (self.lsp.a**2 + self.lsp.a**2+ self.lsp.a**2)
+    
+        elif self.number_of_speakers == "four" :
+            Za1 =  (self.lsp.a**2 * z11 + 2* self.lsp.a * self.lsp.a * z12 + 2* self.lsp.a * self.lsp.a * z13+ 2* self.lsp.a * self.lsp.a * z14) / (self.lsp.a**2 + self.lsp.a**2+ self.lsp.a**2+ self.lsp.a**2)
+            
+                
+        return Za1
         
         
         
-        
-        
-        
-        
-        
+                
     def calculate_box_impedance_for_circular_piston_Zxy(self, f , a, ap, x1, x2, y1, y2, lx, ly, lz, Sd, Sp):
         "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
 
@@ -360,9 +445,10 @@ class BassReflexEnclosure:
             R_s = R_0 * SOUND_CELERITY * k**2 * self.lsp.a**2
             X_s = (R_0 * SOUND_CELERITY * 8 * k * self.lsp.a)/(3 * np.pi)
             Z_a1 =  (R_s + 1j * X_s)
-
  
             if self.number_of_speakers == "one" and self.port_shape == "rectangular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
                 
                 # calculate the leakage resistance
                 CAA = (self.Va1 * 10 ** (-3)) / (
@@ -403,6 +489,8 @@ class BassReflexEnclosure:
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -410,7 +498,8 @@ class BassReflexEnclosure:
                 M = np.array([[ self.lsp.Sd, 0], [0, 1 / (self.lsp.Sd)]])
                 F = np.array([[1, 1 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t1), 1j * Zp * np.sin(kp * self.t1)],
@@ -457,6 +546,9 @@ class BassReflexEnclosure:
 
                 
             elif self.number_of_speakers == "one" and self.port_shape == "circular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
+                 
                 # calculate the leakage resistance
                 CAA = (self.Va1 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -490,9 +582,12 @@ class BassReflexEnclosure:
                 Zp = (R_0 * SOUND_CELERITY * ξ) / (self.Sp1)                
                 
                 # calculate the impedance for circular port
-                R_s = R_0 * SOUND_CELERITY * k**2 * self.lsp.a**2
-                X_s = (R_0 * SOUND_CELERITY * 8 * k * self.lsp.a)/(3 * np.pi)
-                Z_a2 =  (R_s + 1j * X_s)
+                H1 = mpmath.struveh(1, 2*k * self.a_p1) 
+                R_sp = R_0 * SOUND_CELERITY * (1-jv(1, 2*k*self.a_p1)/(k*self.a_p1))
+                X_sp = R_0 * SOUND_CELERITY * (H1/(k*self.a_p1))
+                Z_a2 = (R_sp + 1j * X_sp)/ self.Sp4
+
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -500,7 +595,8 @@ class BassReflexEnclosure:
                 M = np.array([[ self.lsp.Sd, 0], [0, 1 / (self.lsp.Sd)]])
                 F = np.array([[1, 1 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t1), 1j * Zp * np.sin(kp * self.t1)],
@@ -548,6 +644,9 @@ class BassReflexEnclosure:
 
 
             elif self.number_of_speakers == "two" and self.port_shape == "rectangular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
+                
                 # calculate the leakage resistance
                 CAA = (self.Va2 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -587,6 +686,8 @@ class BassReflexEnclosure:
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1/2 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -594,7 +695,8 @@ class BassReflexEnclosure:
                 M = np.array([[ 2* self.lsp.Sd, 0], [0, 1 / (2* self.lsp.Sd)]])
                 F = np.array([[1, 2 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t2), 1j * Zp * np.sin(kp * self.t2)],
@@ -641,6 +743,9 @@ class BassReflexEnclosure:
 
             
             elif self.number_of_speakers == "two" and self.port_shape == "circular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
+                
                 # calculate the leakage resistance
                 CAA = (self.Va2 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -668,15 +773,18 @@ class BassReflexEnclosure:
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
                 
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
+                
                 kv = np.sqrt((-1j * np.pi * 2 * frequencies[i] * R_0) / self.m)
                 ξ = 0.998 + 0.001j
                 kp = (2 * np.pi * frequencies[i] * ξ) / SOUND_CELERITY
                 Zp = (R_0 * SOUND_CELERITY * ξ) / (self.Sp2)                
                 
                 # calculate the impedance for circular port
-                R_s = R_0 * SOUND_CELERITY * k**2 * self.lsp.a**2
-                X_s = (R_0 * SOUND_CELERITY * 8 * k * self.lsp.a)/(3 * np.pi)
-                Z_a2 =  (R_s + 1j * X_s)
+                H1 = mpmath.struveh(1, 2*k * self.a_p2) 
+                R_sp = R_0 * SOUND_CELERITY * (1-jv(1, 2*k*self.a_p2)/(k*self.a_p2))
+                X_sp = R_0 * SOUND_CELERITY * (H1/(k*self.a_p2))
+                Z_a2 = (R_sp + 1j * X_sp)/ self.Sp4
 
                 C = np.array([[1, 1/2 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -684,7 +792,8 @@ class BassReflexEnclosure:
                 M = np.array([[ 2* self.lsp.Sd, 0], [0, 1 / (2 * self.lsp.Sd)]])
                 F = np.array([[1, 2 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t2), 1j * Zp * np.sin(kp * self.t2)],
@@ -732,6 +841,8 @@ class BassReflexEnclosure:
 
 
             elif self.number_of_speakers == "three" and self.port_shape == "rectangular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
                 # calculate the leakage resistance
                 CAA = (self.Va3 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -771,6 +882,8 @@ class BassReflexEnclosure:
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1/3 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -778,7 +891,8 @@ class BassReflexEnclosure:
                 M = np.array([[3* self.lsp.Sd, 0], [0, 1 / (3*self.lsp.Sd)]])
                 F = np.array([[1, 3 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t3), 1j * Zp * np.sin(kp * self.t3)],
@@ -825,6 +939,8 @@ class BassReflexEnclosure:
 
             
             elif self.number_of_speakers == "three" and self.port_shape == "circular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
                 # calculate the leakage resistance
                 CAA = (self.Va3 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -854,15 +970,18 @@ class BassReflexEnclosure:
                 kp = (2 * np.pi * frequencies[i] * ξ) / SOUND_CELERITY
                 Zp = (R_0 * SOUND_CELERITY * ξ) / (self.Sp3)                
 
-                R_s = R_0 * SOUND_CELERITY * k**2 * self.a_p**2
-                X_s = (R_0 * SOUND_CELERITY * 8 * k * self.a_p) / (3 * np.pi)
-                Z_a2 = R_s + 1j * X_s
+                H1 = mpmath.struveh(1, 2*k * self.a_p3) 
+                R_sp = R_0 * SOUND_CELERITY * (1-jv(1, 2*k*self.a_p3)/(k*self.a_p3))
+                X_sp = R_0 * SOUND_CELERITY * (H1/(k*self.a_p3))
+                Z_a2 = (R_sp + 1j * X_sp)/ self.Sp3
                 
                 # 2-port network parameters
                 b11 = Z11 / Z21
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab= self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1/3 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -870,7 +989,8 @@ class BassReflexEnclosure:
                 M = np.array([[3* self.lsp.Sd, 0], [0, 1 / (3*self.lsp.Sd)]])
                 F = np.array([[1, 3 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t3), 1j * Zp * np.sin(kp * self.t3)],
@@ -917,6 +1037,8 @@ class BassReflexEnclosure:
 
 
             elif self.number_of_speakers == "four" and self.port_shape == "rectangular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
                 # calculate the leakage resistance
                 CAA = (self.Va4 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -956,6 +1078,8 @@ class BassReflexEnclosure:
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1/4 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -963,7 +1087,8 @@ class BassReflexEnclosure:
                 M = np.array([[4* self.lsp.Sd, 0], [0, 1 / (4*self.lsp.Sd)]])
                 F = np.array([[1, 4 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t4), 1j * Zp * np.sin(kp * self.t4)],
@@ -1010,6 +1135,8 @@ class BassReflexEnclosure:
      
         
             elif self.number_of_speakers == "four" and self.port_shape == "circular":
+                # calculate the radiation impedance of the diaphragm based on equation 13.339 - 13.345 with Mellow's method
+                #Z_a1 = self.calculate_Za1(frequencies[i])
                 # calculate the leakage resistance
                 CAA = (self.Va4 * 10 ** (-3)) / (
                     1.4 * self.P_0
@@ -1034,9 +1161,10 @@ class BassReflexEnclosure:
                 Kn = LM / self.a2
                 Bu = (2 * 0.9 ** (-1) - 1) * Kn
 
-                # dynamic density based on equation 4.233
-                r_d = (-8 * R_0) / ((1 + 4 * Bu) * kv**2 * self.a2**2)
-                Z_a2 = self.calculate_port_impedance_Za2(frequencies[i], r_d)
+                H1 = mpmath.struveh(1, 2*k * self.a_p4) 
+                R_sp = R_0 * SOUND_CELERITY * (1-jv(1, 2*k*self.a_p4)/(k*self.a_p4))
+                X_sp = R_0 * SOUND_CELERITY * (H1/(k*self.a_p4))
+                Z_a2 = (R_sp + 1j * X_sp)/ self.Sp4
                 
                 kv = np.sqrt((-1j * np.pi * 2 * frequencies[i] * R_0) / self.m)
                 ξ = 0.998 + 0.001j
@@ -1049,6 +1177,8 @@ class BassReflexEnclosure:
                 b12 = (Z11 * Z22 - Z12 * Z21) / Z21
                 b21 = 1 / Z21
                 b22 = Z22 / Z21
+                
+                Z_ab = self.calculate_box_impedance_Zab(frequencies[i])
 
                 C = np.array([[1, 1/4 * Z_e], [0, 1]])
                 E = np.array([[0, 1 * self.lsp.Bl], [1 / self.lsp.Bl, 0]])
@@ -1056,7 +1186,8 @@ class BassReflexEnclosure:
                 M = np.array([[4* self.lsp.Sd, 0], [0, 1 / (4*self.lsp.Sd)]])
                 F = np.array([[1, 4 * Z_a1], [0, 1]])
                 L = np.array([[1, 0], [1 / Ral, 1]])
-                B = np.array([[b11, b12], [b21, b22]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                #B = np.array([[b11, b12], [b21, b22]])
                 P = np.array(
                     [
                         [np.cos(kp * self.t4), 1j * Zp * np.sin(kp * self.t4)],
@@ -1129,10 +1260,10 @@ lsp_parameters = {
 }
 
 # Create an instance of the BassReflexEnclosure class
-lsp_sys_1 = BassReflexEnclosure(lsp_parameters, "one", "rectangular")
-lsp_sys_2 = BassReflexEnclosure(lsp_parameters, "two", "rectangular")
-lsp_sys_3 = BassReflexEnclosure(lsp_parameters, "three", "rectangular")      
-lsp_sys_4 = BassReflexEnclosure(lsp_parameters, "four", "rectangular")
+lsp_sys_1 = BassReflexEnclosure(lsp_parameters, "one", "circular")
+lsp_sys_2 = BassReflexEnclosure(lsp_parameters, "two", "circular")
+lsp_sys_3 = BassReflexEnclosure(lsp_parameters, "three", "circular")      
+lsp_sys_4 = BassReflexEnclosure(lsp_parameters, "four", "circular")
 
 response_1, Ze_1 = lsp_sys_1.calculate_impedance_response(frequencies)
 response_2, Ze_2 = lsp_sys_2.calculate_impedance_response(frequencies)
@@ -1141,29 +1272,29 @@ response_4 , Ze_4 = lsp_sys_4.calculate_impedance_response(frequencies)
 
 
 fig1, ax1 = plt.subplots()
-ax1.semilogx(frequencies, response_1, label="1 Loudspeaker with Rect. port")
-# ax1.semilogx(frequencies, response_2, label="2 Loudspeakers with Rect. port")
-# ax1.semilogx(frequencies, response_3, label="3 Loudspeakers with Rect. port")
-# ax1.semilogx(frequencies, response_4, label="4 Loudspeakers with Rect. port")
+ax1.semilogx(frequencies, response_1, label="1 Loudspeaker with Circ. port")
+ax1.semilogx(frequencies, response_2, label="2 Loudspeakers with Circ. port")
+ax1.semilogx(frequencies, response_3, label="3 Loudspeakers with Circ. port")
+ax1.semilogx(frequencies, response_4, label="4 Loudspeakers with Circ. port")
 ax1.set_xlabel("Frequency (Hz)")
 ax1.set_ylabel("Response (dB)")
 ax1.set_title("System Response")
 ax1.grid(which="both")
 ax1.legend()
 fig1.show()
-fig1.savefig("Ex7.3-1_to_4_pistons_responses.png")
+fig1.savefig("1_to_4_pistons_responses_Circ_7.7.png")
 
 fig2, ax2 = plt.subplots()
-ax2.semilogx(frequencies, Ze_1, label="1 Loudspeaker with Rect. port")
-# ax2.semilogx(frequencies, Ze_2, label="2 Loudspeakers with Rect. port")
-# ax2.semilogx(frequencies, Ze_3, label="3 Loudspeakers with Rect. port")
-# ax2.semilogx(frequencies, Ze_4, label="4 Loudspeakers with Rect. port")
+ax2.semilogx(frequencies, Ze_1, label="1 Loudspeaker with Circ. port")
+ax2.semilogx(frequencies, Ze_2, label="2 Loudspeakers with Circ. port")
+ax2.semilogx(frequencies, Ze_3, label="3 Loudspeakers with Circ. port")
+ax2.semilogx(frequencies, Ze_4, label="4 Loudspeakers with Circ. port")
 ax2.set_xlabel("Frequency (Hz)")
 ax2.set_ylabel("Impedance (Ohm)")
 ax2.set_title("System Impedance")
 ax2.grid(which="both")
 ax2.legend()
 fig2.show()
-fig2.savefig("Ex7.3-1_to_4_pistons_impedances.png")
+fig2.savefig("1_to_4_pistons_impedances_Circ_7.7.png")
 
   
