@@ -77,6 +77,9 @@ class BassReflexEnclosure:
         
         self.Vb1 = 12.2  # total volume of the enclosure in m^3
 
+        self.lx1 = 0.15  # length of the enclosure in m
+        self.ly1 = 0.32  # width of the enclosure in m
+        self.lz1 = 0.192  # height of the enclosure in m
         
         self.porosity = 0.99  # porosity
         self.P_0 = 10**5  # atmospheric pressure
@@ -85,3 +88,22 @@ class BassReflexEnclosure:
         self.r = 50 * 10 ** (-6)  # fiber diameter
         self.truncation_limit = 10  # Truncation limit for the double summation
         self.d = 0.064  # the thickness of the lining material
+        
+        
+    # Calculate simplified impedance of the box     
+    def calculate_simplified_box_impedance_Zab(self, f, B, Va, Vm, lx, ly):
+        Mab = B*R_0/(np.pi * self.lsp.a)
+
+        CAA = (Va*10**(-3))/(1.4*self.P_0)
+        CAM = (Vm*10**(-3))/self.P_0
+        
+        Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+        
+        Ram = R_0* SOUND_CELERITY / (lx * ly) 
+        
+        Rab = Ram/ ((1+ Va/(1.4*Vm))**2 + (2*np.pi*f)**2 *Ram**2 * CAA**2)
+        #print(Rab)
+        
+        Zab = 1*(Rab + 1j*Xab)
+    
+        return Zab
