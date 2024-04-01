@@ -107,3 +107,82 @@ class BassReflexEnclosure:
         Zab = 1*(Rab + 1j*Xab)
     
         return Zab
+    
+    
+    def calculate_box_impedance_for_circular_piston_Zxy(self, f, x1, y1, y2, lx, ly, lz):
+        "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
+
+        # wave number k equation 7.11
+        k = (2 * np.pi * f / SOUND_CELERITY) * (
+            (1 + self.a3 * (self.R_f / f) ** self.b3)
+            - 1j * self.a4 * (self.R_f / f) ** self.b4
+        )
+
+        Zs = R_0 * SOUND_CELERITY + self.P_0 / (1j * 2 * np.pi * f * self.d)
+
+        sum_mn = 0
+        for m in range(self.truncation_limit + 1):
+            for n in range(self.truncation_limit + 1):
+                kmn = np.sqrt(
+                    k**2 - (m * np.pi / lx) ** 2 - (n * np.pi / ly) ** 2
+                )
+                delta_m0 = 1 if m == 0 else 0
+                delta_n0 = 1 if n == 0 else 0
+                term1 = (
+                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * lz)
+                ) / (
+                    1
+                    + 1j
+                    * ((kmn * Zs) / (k * R_0 * SOUND_CELERITY))
+                    * np.tan(kmn * lz)
+                )
+                term2 = (
+                    (2 - delta_m0)
+                    * (2 - delta_n0)
+                    / (
+                        kmn * (n**2 * lx**2 + m**2 * ly**2)
+                        + delta_m0 * delta_n0
+                    )
+                )
+                term3 = (
+                    np.cos((m * np.pi * x1) / lx)
+                    * np.cos((n * np.pi * y1) / ly)
+                    * j1(
+                        (
+                            np.pi
+                            * self.lsp.a
+                            * np.sqrt(n**2 * lx**2 + m**2 * ly**2)
+                        )
+                        / (lx * ly)
+                    )
+                )
+                term4 = (
+                    np.cos((m * np.pi * x1) / lx)
+                    * np.cos((n * np.pi * y2) / ly)
+                    * j1(
+                        (
+                            np.pi
+                            * self.lsp.a
+                            * np.sqrt(n**2 * lx**2 + m**2 * ly**2)
+                        )
+                        / (lx * ly)
+                    )
+                )
+                sum_mn += term1 * term2 * term3 * term4
+
+        Zxy = (
+            R_0
+            * SOUND_CELERITY
+            * (
+                (self.lsp.Sd * self.lsp.Sd)
+                / (lx * ly)
+                * (
+                    ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * lz))
+                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * lz)))
+                )
+                + 4 * k * self.lsp.a * self.lsp.a * lx * ly * sum_mn
+            )
+        ) / (self.lsp.Sd * self.lsp.Sd)
+
+        return Zxy
+    
