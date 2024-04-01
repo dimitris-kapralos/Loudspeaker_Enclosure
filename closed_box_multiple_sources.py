@@ -66,16 +66,21 @@ class BassReflexEnclosure:
         self.lsp = Loudspeaker(lsp_par)
         
         self.Va1 = 9.15 # volume of the enclosure without the volume of # lining material in m^3
-
+        self.Va2 = 18.3 # volume of the enclosure without the volume of # lining material in m^3
         
         self.Vm1 = 3.05  # volume of the lining material in m^3
-
+        self.Vm2 = 6.15  # volume of the lining material in m^3
         
         self.Vb1 = 12.2  # total volume of the enclosure in m^3
+        self.Vb2 = 24.4  # total volume of the enclosure in m^3
 
-        self.lx1 = 0.15  # length of the enclosure in m
-        self.ly1 = 0.32  # width of the enclosure in m
-        self.lz1 = 0.192  # height of the enclosure in m
+        self.lx1 = 0.15  # width of the enclosure in m
+        self.ly1 = 0.32  # height of the enclosure in m
+        self.lz1 = 0.192  # depth of the enclosure in m
+        
+        self.lx2 = 0.15  # width of the enclosure in m
+        self.ly2 = 0.635 # height of the enclosure in m
+        self.lz2 = 0.192 # depth of the enclosure in m
         
         self.porosity = 0.99  # porosity
         self.P_0 = 10**5  # atmospheric pressure
@@ -122,7 +127,7 @@ class BassReflexEnclosure:
         return Zab
     
     
-    def calculate_box_impedance_for_circular_piston_Zxy(self, f, x1, y1, y2, lx, ly, lz):
+    def calculate_box_impedance_for_circular_piston_Zxy(self, f, x1, y1, lx, ly, lz):
         "Calculate the box impedance based on equation 7.131 for circular loudspeaker."
 
         # wave number k equation 7.11
@@ -171,7 +176,7 @@ class BassReflexEnclosure:
                 )
                 term4 = (
                     np.cos((m * np.pi * x1) / lx)
-                    * np.cos((n * np.pi * y2) / ly)
+                    * np.cos((n * np.pi * y1) / ly)
                     * j1(
                         (
                             np.pi
@@ -229,8 +234,12 @@ class BassReflexEnclosure:
             
             if self.number_of_speakers == "one":
                 Z_ab = self.calculate_simplified_box_impedance_Zab(
-                    frequencies[i] , self.Va1, self.Vm1, self.lx1, self.ly1, B="0.5"
+                    frequencies[i] , self.Va1, self.Vm1, self.lx1, self.ly1, B="0.46"
                 )
+                
+                # Z_ab = self.calculate_box_impedance_for_circular_piston_Zxy(
+                #     frequencies[i], 0.075, 11.5, 11.5, self.lx1, self.ly1, self.lz1
+                # )   
 
                 C = np.array([[1, 1/1* Z_e], [0, 1]])
                 E = np.array([[0, 1* self.lsp.Bl], [1 / (1*self.lsp.Bl), 0]])
@@ -238,6 +247,22 @@ class BassReflexEnclosure:
                 M = np.array([[1* self.lsp.Sd, 0], [0, 1 / (1*self.lsp.Sd)]])
                 F = np.array([[1, 1*Z_a1], [0, 1]])
                 B = np.array([[1, 0], [1 / Z_ab, 1]])
+                
+                U_ref = ( 1* self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / ( 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re)
+                
+            elif self.number_of_speakers == "two":
+                Z_ab = self.calculate_simplified_box_impedance_Zab(
+                    frequencies[i] , self.Va2, self.Vm2, self.lx2, self.ly2, B="0.46"
+                )
+                
+                C = np.array([[1, 1/2* Z_e], [0, 1]])
+                E = np.array([[0, 1* self.lsp.Bl], [1 / (1*self.lsp.Bl), 0]])
+                D = np.array([[1,2*Z_md], [0, 1]])
+                M = np.array([[2* self.lsp.Sd, 0], [0, 1 / (2*self.lsp.Sd)]])
+                F = np.array([[1, 2*Z_a1], [0, 1]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                
+                U_ref = ( 2* self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / ( 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re)
 
 
             A = np.dot(np.dot(np.dot(np.dot(np.dot(C, E), D), M), F), B)
@@ -247,7 +272,7 @@ class BassReflexEnclosure:
             a21 = A[1, 0]
             #a22 = A[1, 1]
 
-            U_ref = ( 1* self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / ( 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re)
+            
             p_6 = self.lsp.e_g / a11
             U_c = p_6 / Z_ab
             response[i] = 20 * np.log10(float(abs(U_c)) / float(abs(U_ref)))
@@ -282,29 +307,30 @@ lsp_parameters = {
 
 # Create an instance of the BassReflexEnclosure class
 lsp_sys_1 = BassReflexEnclosure(lsp_parameters, "one")
-
+lsp_sys_2 = BassReflexEnclosure(lsp_parameters, "two")
 
 response_1, Ze_1 = lsp_sys_1.calculate_impedance_response(frequencies)
-
+response_2, Ze_2 = lsp_sys_2.calculate_impedance_response(frequencies)
 
 
 fig1, ax1 = plt.subplots()
 ax1.semilogx(frequencies, response_1, label="1 Loudspeaker with Simplified Box Impedance")
+ax1.semilogx(frequencies, response_2, label="2 Loudspeakers with Simplified Box Impedance")
 ax1.set_xlabel("Frequency (Hz)")
 ax1.set_ylabel("Response (dB)")
 ax1.set_title("System Response")
 ax1.grid(which="both")
 ax1.legend()
 fig1.show()
-fig1.savefig("Closed_box_1_loudspeaker_responce.png")
+fig1.savefig("Closed_box_2_loudspeakers_responce.png")
 
 fig2, ax2 = plt.subplots()
 ax2.semilogx(frequencies, Ze_1, label="1 Loudspeaker with Simplified Box Impedance")
-
+ax2.semilogx(frequencies, Ze_2, label="2 Loudspeakers with Simplified Box Impedance")
 ax2.set_xlabel("Frequency (Hz)")
 ax2.set_ylabel("Impedance (Ohm)")
 ax2.set_title("System Impedance")
 ax2.grid(which="both")
 ax2.legend()
 fig2.show()
-fig2.savefig("Closed_box_1_loudspeaker_impedance.png")   
+fig2.savefig("Closed_box_2_loudspeakers_impedance.png")   
