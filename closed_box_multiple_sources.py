@@ -68,14 +68,17 @@ class BassReflexEnclosure:
         self.Va1 = 9.15 # volume of the enclosure without the volume of # lining material in m^3
         self.Va2 = 18.3 # volume of the enclosure without the volume of # lining material in m^3
         self.Va3 = 27.45 # volume of the enclosure without the volume of # lining material in m^3
+        self.Va4 = 36.6 # volume of the enclosure without the volume of # lining material in m^3
         
         self.Vm1 = 3.05  # volume of the lining material in m^3
         self.Vm2 = 6.15  # volume of the lining material in m^3
         self.Vm3 = 9.15  # volume of the lining material in m^3
+        self.Vm4 = 12.2  # volume of the lining material in m^3
         
         self.Vb1 = 12.2  # total volume of the enclosure in m^3
         self.Vb2 = 24.4  # total volume of the enclosure in m^3
         self.Vb3 = 36.65  # total volume of the enclosure in m^3
+        self.Vb4 = 48.8  # total volume of the enclosure in m^3
 
         self.lx1 = 0.15  # width of the enclosure in m
         self.ly1 = 0.32  # height of the enclosure in m
@@ -88,6 +91,10 @@ class BassReflexEnclosure:
         self.lx3 = 0.2  # width of the enclosure
         self.ly3 = 0.715 # height of the enclosure
         self.lz3 = 0.192 # depth of the enclosure
+        
+        self.lx4 = 0.2  # width of the enclosure
+        self.ly4 = 0.955 # height of the enclosure
+        self.lz4 = 0.192 # depth of the enclosure
         
         self.porosity = 0.99  # porosity
         self.P_0 = 10**5  # atmospheric pressure
@@ -280,12 +287,25 @@ class BassReflexEnclosure:
                 E = np.array([[0, 1* self.lsp.Bl], [1 / (1*self.lsp.Bl), 0]])
                 D = np.array([[1,3*Z_md], [0, 1]])
                 M = np.array([[3* self.lsp.Sd, 0], [0, 1 / (3*self.lsp.Sd)]])
-                F = np.array([[1, 4*Z_a1], [0, 1]])
+                F = np.array([[1, 3*Z_a1], [0, 1]])
                 B = np.array([[1, 0], [1 / Z_ab, 1]])
                 
                 U_ref = ( 3* self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / ( 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re)    
 
-
+            elif self.number_of_speakers == "four":
+                Z_ab = self.calculate_simplified_box_impedance_Zab(
+                    frequencies[i] , self.Va4, self.Vm4, self.lx4, self.ly4, B="0.46"
+                )
+                
+                C = np.array([[1, 1/4* Z_e], [0, 1]])
+                E = np.array([[0, 1* self.lsp.Bl], [1 / (1*self.lsp.Bl), 0]])
+                D = np.array([[1,4*Z_md], [0, 1]])
+                M = np.array([[4* self.lsp.Sd, 0], [0, 1 / (4*self.lsp.Sd)]])
+                F = np.array([[1, 4*Z_a1], [0, 1]])
+                B = np.array([[1, 0], [1 / Z_ab, 1]])
+                
+                U_ref = ( 4* self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / ( 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re) 
+                 
             A = np.dot(np.dot(np.dot(np.dot(np.dot(C, E), D), M), F), B)
 
             a11 = A[0, 0]
@@ -330,32 +350,35 @@ lsp_parameters = {
 lsp_sys_1 = BassReflexEnclosure(lsp_parameters, "one")
 lsp_sys_2 = BassReflexEnclosure(lsp_parameters, "two")
 lsp_sys_3 = BassReflexEnclosure(lsp_parameters, "three")
+lsp_sys_4 = BassReflexEnclosure(lsp_parameters, "four")
 
 response_1, Ze_1 = lsp_sys_1.calculate_impedance_response(frequencies)
 response_2, Ze_2 = lsp_sys_2.calculate_impedance_response(frequencies)
 response_3, Ze_3 = lsp_sys_3.calculate_impedance_response(frequencies)
-
+response_4, Ze_4 = lsp_sys_4.calculate_impedance_response(frequencies)
 
 fig1, ax1 = plt.subplots()
 ax1.semilogx(frequencies, response_1, label="1 Loudspeaker with Simplified Box Impedance")
 ax1.semilogx(frequencies, response_2, label="2 Loudspeakers with Simplified Box Impedance")
 ax1.semilogx(frequencies, response_3, label="3 Loudspeakers with Simplified Box Impedance")
+ax1.semilogx(frequencies, response_4, label="4 Loudspeakers with Simplified Box Impedance")
 ax1.set_xlabel("Frequency (Hz)")
 ax1.set_ylabel("Response (dB)")
 ax1.set_title("System Response")
 ax1.grid(which="both")
 ax1.legend()
 fig1.show()
-fig1.savefig("Closed_box_3_loudspeakers_responce.png")
+fig1.savefig("Closed_box_4_loudspeakers_responce.png")
 
 fig2, ax2 = plt.subplots()
 ax2.semilogx(frequencies, Ze_1, label="1 Loudspeaker with Simplified Box Impedance")
 ax2.semilogx(frequencies, Ze_2, label="2 Loudspeakers with Simplified Box Impedance")
 ax2.semilogx(frequencies, Ze_3, label="3 Loudspeakers with Simplified Box Impedance")
+ax2.semilogx(frequencies, Ze_4, label="4 Loudspeakers with Simplified Box Impedance")
 ax2.set_xlabel("Frequency (Hz)")
 ax2.set_ylabel("Impedance (Ohm)")
 ax2.set_title("System Impedance")
 ax2.grid(which="both")
 ax2.legend()
 fig2.show()
-fig2.savefig("Closed_box_3_loudspeakers_impedance.png")   
+fig2.savefig("Closed_box_4_loudspeakers_impedance.png")   
