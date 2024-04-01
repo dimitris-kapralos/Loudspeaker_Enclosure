@@ -13,6 +13,8 @@ R_e = 6.72
 L_e = 0.0005
 Sd = 0.012
 r_0 = 1.18
+Va = 9.15
+Vm = 3.05
 c = 343
 a = np.sqrt(Sd / np.pi)
 Qms = 2.2
@@ -28,7 +30,7 @@ porosity = 0.99  # porosity
 P_0 = 10 ** 5
 u = 0.03  # flow velocity in the material in m/s
 m = 1.86 * 10**(-5)  # viscosity coefficient in N.s/m^2
-r = 60 * 10 ** (-6) # fiber diameter 
+r = 50 * 10 ** (-6) # fiber diameter 
 
 # Values of coefficients (Table 7.1)
 a3 = 0.0858
@@ -73,6 +75,21 @@ def calculate_ZAB(f, lz, a, r_0, c, lx, ly, truncation_limit):
     return  ZAB
 
 
+def calculate_box_impedance_Zab(f):
+    Mab = 0.5*r_0/(np.pi * a)
+
+    CAA = (Va*10**(-3))/(1.4*P_0)
+    CAM = (Vm*10**(-3))/P_0
+    
+    Xab = 2*np.pi*f*Mab - 1 /(2*np.pi*f*(CAA + CAM))
+    
+    Rab = 8651/ ((1+ Va/(1.4*Vm))**2 + (2*np.pi*f)**2 *8651**2 * CAA**2)
+    #print(Rab)
+    
+    Zab = 1*(Rab + 1j*Xab)
+    
+    return Zab
+
 # Define a range of frequencies
 octave_steps = 24
 frequencies_per_octave = octave_steps * np.log(2)
@@ -84,6 +101,7 @@ frequencies = np.logspace(np.log2(min_frequency), np.log2(max_frequency), num=nu
 # Preallocate memory 
 response = np.zeros_like(frequencies)
 Ze = np.zeros_like(frequencies)
+SWL = np.zeros_like(frequencies)
 
 for i in range(len(frequencies)):
     Z_e = R_e + 1j * 2 * np.pi * frequencies[i] * L_e
@@ -97,12 +115,14 @@ for i in range(len(frequencies)):
     Z_a1 =  (R_s + 1j * X_s)
     
     # Calculate Z_ab using the function
-    Z_ab = calculate_ZAB(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
+    #Z_ab = calculate_ZAB(frequencies[i], lz, a, r_0, c, lx, ly, truncation_limit)
 
-    C = np.array([[1, 1* Z_e], [0, 1]])
-    E = np.array([[0, 1* Bl], [1 / Bl, 0]])
+    Z_ab = calculate_box_impedance_Zab(frequencies[i])
+    
+    C = np.array([[1, 1/1* Z_e], [0, 1]])
+    E = np.array([[0, 1* Bl], [1 / (1*Bl), 0]])
     D = np.array([[1, 1*Z_md], [0, 1]])
-    M = np.array([[1* Sd, 0], [0, 1 / Sd]])
+    M = np.array([[1* Sd, 0], [0, 1 / (1*Sd)]])
     F = np.array([[1, 1*Z_a1], [0, 1]])
     B = np.array([[1, 0], [1 / Z_ab, 1]])
 
@@ -113,12 +133,14 @@ for i in range(len(frequencies)):
     a21 = A[1, 0]
     a22 = A[1, 1]
 
-    U_ref = ( e_g * Bl * Sd) / ( 2 * np.pi * frequencies[i] * Mms * R_e)
+    U_ref = ( 1* e_g * Bl * Sd) / ( 2 * np.pi * frequencies[i] * Mms * R_e)
     p_6 = e_g / a11
     U_c = p_6 / Z_ab
     response[i] = 20 * np.log10(float(abs(U_c)) / float(abs(U_ref)))
     Ze[i] = abs((a11) / (a21))
     
+
+
 
 # Plotting the response
 plt.figure()
