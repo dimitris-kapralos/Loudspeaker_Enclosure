@@ -1,9 +1,6 @@
-import math
 import matplotlib.pyplot as plt
 import numpy as np
-import scipy.special
-import mpmath
-from scipy.special import gamma, j1, jv, spherical_jn, spherical_yn
+from scipy.special import j1
 
 
 # Speed of sound propagation in air, m/s
