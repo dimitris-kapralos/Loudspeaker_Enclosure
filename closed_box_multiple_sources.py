@@ -90,6 +90,16 @@ class BassReflexEnclosure:
         self.d = 0.064  # the thickness of the lining material
         
         
+    def calculate_R_f(self):
+        """Calculate flow resistance of lining material, Eq. 7.8."""
+        self.R_f = (
+            (4 * self.m * (1 - self.porosity)) / (self.porosity * self.r**2)
+        ) * (
+            (1 - 4 / np.pi * (1 - self.porosity))
+            / (2 + np.log((self.m * self.porosity) / (2 * self.r * R_0 * self.u)))
+            + (6 / np.pi) * (1 - self.porosity)
+        )    
+        
     # Calculate simplified impedance of the box     
     def calculate_simplified_box_impedance_Zab(self, f, B, Va, Vm, lx, ly):
         Mab = B*R_0/(np.pi * self.lsp.a)
