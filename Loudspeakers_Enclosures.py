@@ -84,7 +84,7 @@ class Loudspeaker:
             self.a = np.sqrt(self.Sd / np.pi)  # radius of the diaphragm
         self.Rms = 1 / self.Qms * np.sqrt(self.Mms / self.Cms)
         self.Mmd = self.Mms - 16 * R_0 * self.a**3 / 3
-        
+
     def calculate_R_f(self):
         """Calculate flow resistance of lining material, Eq. 7.8."""
         R_f = ((4 * m * (1 - POROSITY)) / (POROSITY * R**2)) * (
@@ -92,7 +92,7 @@ class Loudspeaker:
             / (2 + np.log((m * POROSITY) / (2 * R * R_0 * U)))
             + (6 / np.pi) * (1 - POROSITY)
         )
-        
+
         return R_f
 
     def calculate_wave_number(self, f):
@@ -102,7 +102,7 @@ class Loudspeaker:
             (1 + A3 * (R_f / f) ** B3) - 1j * A4 * (R_f / f) ** B4
         )
         return k
-    
+
     def calculate_spl(self, f):
         """Calculate the sound pressure level."""
         k = self.calculate_wave_number(f)
@@ -121,10 +121,41 @@ class Loudspeaker:
         u_c = self.e_g * self.Bl / ((self.Re + 1j * 2 * np.pi * f * self.Le) * Zmt)
         p_rms = R_0 * f * self.Sd * u_c
         pref = 20e-6
-        SPL = 20 * np.log10((p_rms) / (pref))
-        
+        SPL = 20 * np.log10(float(np.abs(p_rms)) / float(np.abs(pref)))
+
         return SPL
 
+    def calculate_sound_power(self, f):
+        """Calculate the sound power."""
+        Rmr = ((2 * np.pi * f) ** 2 * self.Sd**2 * R_0) / (2 * np.pi * SOUND_CELERITY)
+        Rm = self.Bl**2 / self.Re + self.Rms + 2 * Rmr
+        Mm1 = 2.67 * self.a**3 * R_0
+        Xm = 2 * np.pi * f * (self.Mmd + 2 * Mm1) - 1 / (2 * np.pi * f * self.Cms)
+        W = (
+            np.abs(self.e_g / np.sqrt(2)) ** 2
+            * (2 * (self.Bl**2) * Rmr)
+            / (self.Re**2 * (Rm**2 + Xm**2))
+        )
+        Wref = 10 ** (-12)
+        power = 10 * np.log10(np.abs(W) / np.abs(Wref))
+        
+        return power
+    
+    
+    def calculate_loudspeaker_response(self, frequencies):
+        """Calculate the system response."""
+        # Preallocate memory
+        power = np.zeros_like(frequencies)
+        spl = np.zeros_like(frequencies)
+        for i in range(len(frequencies)):
+            # calculate the sound power
+            W = self.calculate_sound_power(frequencies[i])
+            power[i] = W
+
+            # calculate the sound pressure level
+            SPL = self.calculate_spl(frequencies[i])
+            spl[i] = SPL
+        return power, spl
 
 class ClosedBoxEnclosure:
     """Loudspeaker enclosure parameters class."""
@@ -150,15 +181,10 @@ class ClosedBoxEnclosure:
         self.Vm = self.Va / 3
         self.Vb = self.Va + self.Vm
 
-
-    def calculate_diaphragm_radiation_impedance(self,f):
+    def calculate_diaphragm_radiation_impedance(self, f):
         k = self.lsp.calculate_wave_number(f)
         H1 = mpmath.struveh(1, 2 * k * self.lsp.a)
-        R_sp = (
-            R_0
-            * SOUND_CELERITY
-            * (1 - jv(1, 2 * k * self.lsp.a) / (k * self.lsp.a))
-        )
+        R_sp = R_0 * SOUND_CELERITY * (1 - jv(1, 2 * k * self.lsp.a) / (k * self.lsp.a))
         X_sp = R_0 * SOUND_CELERITY * (H1 / (k * self.lsp.a))
         Z_a2 = R_sp + 1j * X_sp
 
@@ -195,7 +221,7 @@ class ClosedBoxEnclosure:
     def calculate_box_impedance_for_circular_piston_Zxy(self, f, x1, y1):
         "Calculate the complex box impedance for circular loudspeaker."
         k = self.lsp.calculate_wave_number(f)
-        
+
         Zs = R_0 * SOUND_CELERITY + P_0 / (1j * 2 * np.pi * f * self.d)
 
         sum_mn = 0
@@ -207,8 +233,7 @@ class ClosedBoxEnclosure:
                 delta_m0 = 1 if m == 0 else 0
                 delta_n0 = 1 if n == 0 else 0
                 term1 = (
-                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY)
-                    + 1j * np.tan(kmn * self.lz)
+                    (kmn * Zs) / (k * R_0 * SOUND_CELERITY) + 1j * np.tan(kmn * self.lz)
                 ) / (
                     1
                     + 1j
@@ -257,11 +282,7 @@ class ClosedBoxEnclosure:
                 / (self.lx * self.ly)
                 * (
                     ((Zs / (R_0 * SOUND_CELERITY)) + 1j * np.tan(k * self.lz))
-                    / (
-                        1
-                        + 1j
-                        * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz))
-                    )
+                    / (1 + 1j * ((Zs / (R_0 * SOUND_CELERITY)) * np.tan(k * self.lz)))
                 )
                 + 4 * k * self.lsp.a * self.lsp.a * self.lx * self.ly * sum_mn
             )
@@ -422,7 +443,7 @@ class ClosedBoxEnclosure:
             power[i] = 10 * np.log10(W / W_ref)
 
             # calculate the sound pressure level
-            prms = R_0 * frequencies[i] * U_c
+            prms = R_0 * frequencies[i] * U_c 
             pref = 20e-6
             spl[i] = 20 * np.log10((prms) / (pref))
 
