@@ -18,6 +18,8 @@ lsp_parameters = {
     "Cms": 0.00119,
     "Mms": 0.0156,
     "Bl": 6.59,
+    "radius": 0.15,
+    "height": 0.064,
 
 }
 

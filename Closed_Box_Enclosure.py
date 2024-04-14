@@ -16,6 +16,8 @@ lsp_parameters = {
     "Cms": 0.00107,
     "Mms": 0.0156,
     "Bl": 6.59,
+    "radius": 0.15,
+    "height": 0.064,
 }
 
 clb_parameters1 = {
@@ -109,10 +111,10 @@ plt.show()
 
 # Plot the power
 plt.figure()
-plt.semilogx(frequencies, power)
-plt.semilogx(frequencies, power2)
-plt.semilogx(frequencies, power3)
-plt.semilogx(frequencies, power4)
+plt.semilogx(frequencies, power, label='1 loudspeaker in infinite baffle')
+# plt.semilogx(frequencies, power2)
+# plt.semilogx(frequencies, power3)
+# plt.semilogx(frequencies, power4)
 plt.xlabel('Frequency (Hz)')
 plt.ylabel('dB rel. 1pW')
 plt.title("Sound Power Lw")
@@ -122,10 +124,10 @@ plt.show()
 
 # plot the sound power level
 plt.figure()
-plt.semilogx(frequencies, spl1)
-plt.semilogx(frequencies, spl2)
-plt.semilogx(frequencies, spl3)
-plt.semilogx(frequencies, spl4)
+plt.semilogx(frequencies, spl, label='1 loudspeaker in infinite baffle')
+# plt.semilogx(frequencies, spl2)
+# plt.semilogx(frequencies, spl3)
+# plt.semilogx(frequencies, spl4)
 plt.xlabel('Frequency (Hz)')
 plt.ylabel('dB rel. 20uPa')     
 plt.title('Sound Presure Level (SPL)')
