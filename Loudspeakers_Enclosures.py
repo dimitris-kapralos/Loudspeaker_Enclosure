@@ -84,6 +84,9 @@ class Loudspeaker:
             self.a = np.sqrt(self.Sd / np.pi)  # radius of the diaphragm
         self.Rms = 1 / self.Qms * np.sqrt(self.Mms / self.Cms)
         self.Mmd = self.Mms - 16 * R_0 * self.a**3 / 3
+        self.radius = lsp_par["radius"]
+        self.height = lsp_par["height"]
+        self.volume = np.pi * self.radius**2 * self.height
 
     def calculate_R_f(self):
         """Calculate flow resistance of lining material, Eq. 7.8."""
@@ -197,19 +200,19 @@ class ClosedBoxEnclosure:
 
         return Z_a1
 
-    def calculate_simplified_box_impedance_Zab(self, f, B):
+    def calculate_simplified_box_impedance_Zab(self, f, Va, Vm, B):
         """Calculate the simplified box impedance for circular loudspeaker."""
         Mab = float(B) * R_0 / (np.pi * self.lsp.a)
 
-        CAA = (self.Va * 10 ** (-3)) / (1.4 * P_0)
-        CAM = (self.Vm * 10 ** (-3)) / P_0
+        CAA = (Va * 10 ** (-3)) / (1.4 * P_0)
+        CAM = (Vm * 10 ** (-3)) / P_0
 
         Xab = 2 * np.pi * f * Mab - 1 / (2 * np.pi * f * (CAA + CAM))
 
         Ram = R_0 * SOUND_CELERITY / (self.lx * self.ly)
 
         Rab = Ram / (
-            (1 + self.Va / (1.4 * self.Vm)) ** 2
+            (1 + Va / (1.4 * Vm)) ** 2
             + (2 * np.pi * f) ** 2 * Ram**2 * CAA**2
         )
         # print(Rab)
@@ -388,7 +391,7 @@ class ClosedBoxEnclosure:
             Z_a3 = self.calculate_circular_Za1(frequencies[i])
 
             # calculate the simplified box impedance for circular loudspeaker
-            Zab = self.calculate_simplified_box_impedance_Zab(frequencies[i], B=0.46)
+            Zab = self.calculate_simplified_box_impedance_Zab(frequencies[i], self.Va, self.Vm, B=0.46)
 
             # calculate the complex box impedance for circular loudspeaker
             Zxy = self.calculate_box_impedance_for_circular_piston_Zxy(
@@ -630,7 +633,7 @@ class BassReflexEnclosure:
             )
             # calculate the simplified box impedance for circular loudspeaker
             Zab = self.clb.calculate_simplified_box_impedance_Zab(
-                frequencies[i], B=0.46
+                frequencies[i], self.Va, self.Vm,  B=0.3
             )
 
             # calculate the complex diaphragm radiation impedance
@@ -723,3 +726,112 @@ class BassReflexEnclosure:
             power[i] = 10 * np.log10(W / W_ref)
 
         return response, Ze, power
+
+
+class DodecahedronEnclosure:
+    """Loudspeaker enclosure parameters class."""
+
+    def __init__(self, clb_par, dod_par ,lsp_par):
+        """Initialize the loudspeaker enclosure object."""
+        self.lsp = Loudspeaker(lsp_par)
+        self.clb = ClosedBoxEnclosure(
+            clb_par, lsp_par
+        )  # Pass lsp_par to initialize ClosedBoxEnclosure
+
+        # Access attributes from ClosedBoxEnclosure instance
+        self.Vab = dod_par["Vab"]
+
+    def calculate_dodecahedron_volume(self):
+        """Calculate the volume of the dodecahedron."""
+        Vb = self.Vab - self.lsp.volume * 12
+        Va = 3*Vb / 4
+        Vm = Va / 3 
+        
+        return Va, Vm, Vb
+
+    def calculate_dodecahedron_response(self, frequencies):
+        """Calculate the system response."""
+        # Preallocate memory
+        response = np.zeros_like(frequencies)
+        Ze = np.zeros_like(frequencies)
+        power = np.zeros_like(frequencies)
+        spl = np.zeros_like(frequencies)
+
+        for i in range(len(frequencies)):
+            # calculate the dodecahedron volume
+            Va, Vm, Vb = self.calculate_dodecahedron_volume()
+            
+            # calculate the electrical impedance
+            Z_e = self.lsp.Re + 1j * 2 * np.pi * frequencies[i] * self.lsp.Le
+
+            # calculate the mechanical impedance
+            Mmd = self.lsp.Mms - 16 * R_0 * self.lsp.a**3 / 3
+            Z_md = (
+                1j * 2 * np.pi * frequencies[i] * Mmd
+                + self.lsp.Rms
+                + 1 / (1j * 2 * np.pi * frequencies[i] * self.lsp.Cms)
+            )
+            # calculate the wave number k
+            self.lsp.calculate_wave_number(frequencies[i])
+
+            # calculate the box impedance for piston in a cap
+            Z_a3 = self.clb.calculate_circular_Za1(frequencies[i])
+
+            # calculate the simplified box impedance for circular loudspeaker
+            Zab = self.clb.calculate_simplified_box_impedance_Zab(frequencies[i],Va, Vm, B=0.3)
+
+            # transmission line matrices method
+            C = np.array([[1, 4 / 3 * Z_e], [0, 1]])
+            E = np.array([[0, 4 * self.lsp.Bl], [1 / (4 * self.lsp.Bl), 0]])
+            D = np.array([[1, 12 * Z_md], [0, 1]])
+            M = np.array(
+                [
+                    [12 * self.lsp.Sd, 0],
+                    [0, 1 / (12 * self.lsp.Sd)],
+                ]
+            )
+            F = np.array([[1, 12 * Z_a3], [0, 1]])
+            B = np.array([[1, 0], [1 / Zab, 1]])
+
+            A = np.dot(np.dot(np.dot(np.dot(np.dot(C, E), D), M), F), B)
+
+            a11 = A[0, 0]
+            # a12 = A[0, 1]
+            a21 = A[1, 0]
+            # a22 = A[1, 1]
+
+            p_6 = self.lsp.e_g / a11
+            U_c = p_6 / Zab
+
+            # calculate the system response
+            U_ref = (4 * self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / (
+                2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re
+            )
+            response[i] = 20 * np.log10((np.abs(U_c)) / (np.abs(U_ref)))
+
+            # calculate the system impedance
+            Ze[i] = np.abs((a11) / (a21))
+
+            # calculate the power Lw
+            Rmr = (
+                (2 * np.pi * frequencies[i]) ** 2
+                * 12
+                * (self.lsp.Sd) ** 2
+                * R_0
+            ) / (2 * np.pi * SOUND_CELERITY)
+            W = (
+                np.abs((U_c) / (np.sqrt(2) * 12 * self.lsp.Sd)) ** 2
+                * 1
+                * Rmr
+            )
+            W_ref = 10 ** (-12)
+            power[i] = 10 * np.log10(W / W_ref)
+
+            # calculate the sound pressure level
+            prms = R_0 * frequencies[i] * U_c 
+            pref = 20e-6
+            spl[i] = 20 * np.log10((prms) / (pref))
+
+        return response, Ze, power, spl
+    
+    
