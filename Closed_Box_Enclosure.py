@@ -22,9 +22,12 @@ lsp_parameters = {
 
 clb_parameters1 = {
     "number_of_speakers": 1,
-    "lx": 0.25,
-    "ly": 0.65,
+    "lx": 0.15,
+    "ly": 0.35,
     "lz": 0.19,
+    "x": 0.075,
+    "y1": 0.15,
+    "y2": 0.15,
     "r" : 0.15,
     "d" : 0.064,
     "Wmax": 100,
@@ -32,9 +35,12 @@ clb_parameters1 = {
 }
 clb_parameters2 = {
     "number_of_speakers": 2,
-    "lx": 0.25,
-    "ly": 0.65,
+    "lx": 0.15,
+    "ly": 0.63,
     "lz": 0.19,
+    "x": 0.1,
+    "y1": 0.33,
+    "y2": 0.33,
     "r" : 0.15,
     "d" : 0.064,
     "Wmax": 100,
@@ -42,9 +48,12 @@ clb_parameters2 = {
 }
 clb_parameters3 = {
     "number_of_speakers": 3,
-    "lx": 0.25,
-    "ly": 0.65,
+    "lx": 0.2,
+    "ly": 0.715,
     "lz": 0.19,
+    "x": 0.1,
+    "y1": 0.35,
+    "y2": 0.4,
     "r" : 0.15,
     "d" : 0.064,
     "Wmax": 100,
@@ -52,9 +61,12 @@ clb_parameters3 = {
 }
 clb_parameters4 = {
     "number_of_speakers": 4,
-    "lx": 0.25,
-    "ly": 0.65,
+    "lx": 0.2,
+    "ly": 0.94,
     "lz": 0.19,
+    "x": 0.1,
+    "y1": 0.45,
+    "y2": 0.45,
     "r" : 0.15,
     "d" : 0.064,
     "Wmax": 100,
@@ -86,52 +98,56 @@ response3, impedance3, power3, spl3 = enclosure3.calculate_closed_box_response(f
 response4, impedance4, power4, spl4 = enclosure4.calculate_closed_box_response(frequencies , number_of_speakers=4)
 
 # Plot the system response
-plt.figure()
-plt.semilogx(frequencies, response1)
-plt.semilogx(frequencies, response2)
-plt.semilogx(frequencies, response3)
-plt.semilogx(frequencies, response4)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. Uref')
-plt.title('System Response')
-plt.grid(which='both')
+fig1, ax1 = plt.subplots()
+ax1.semilogx(frequencies, response1, label='1 loudspeaker')
+ax1.semilogx(frequencies, response2, label='2 loudspeakers')
+ax1.semilogx(frequencies, response3, label='3 loudspeakers')
+ax1.semilogx(frequencies, response4, label='4 loudspeakers')
+ax1.set_xlabel('Frequency (Hz)')
+ax1.set_ylabel('dB rel. Uref')
+ax1.set_title('System Response')
+ax1.grid(which='both')
+ax1.legend()
 plt.show()
 
 # Plot the impedance
-plt.figure()
-plt.semilogx(frequencies, impedance1)
-plt.semilogx(frequencies, impedance2)
-plt.semilogx(frequencies, impedance3)
-plt.semilogx(frequencies, impedance4)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Impedance (Ohms)')
-plt.title('System Impedance')
-plt.grid(which='both')
+fig2, ax2 = plt.subplots()
+ax2.semilogx(frequencies, impedance1, label='1 loudspeaker')
+ax2.semilogx(frequencies, impedance2, label='2 loudspeakers')
+ax2.semilogx(frequencies, impedance3, label='3 loudspeakers')
+ax2.semilogx(frequencies, impedance4, label='4 loudspeakers')
+ax2.set_xlabel('Frequency (Hz)')
+ax2.set_ylabel('Impedance (Ohms)')
+ax2.set_title('System Impedance')
+ax2.grid(which='both')
+ax2.legend()
 plt.show()
 
 # Plot the power
-plt.figure()
-plt.semilogx(frequencies, power, label='1 loudspeaker in infinite baffle')
-# plt.semilogx(frequencies, power2)
-# plt.semilogx(frequencies, power3)
-# plt.semilogx(frequencies, power4)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. 1pW')
-plt.title("Sound Power Lw")
-plt.grid(which='both')
+fig3, ax3 = plt.subplots()
+ax3.semilogx(frequencies, power1, label='1 loudspeaker')
+ax3.semilogx(frequencies, power2, label='2 loudspeakers')
+ax3.semilogx(frequencies, power3, label='3 loudspeakers')
+ax3.semilogx(frequencies, power4, label='4 loudspeakers')
+ax3.set_xlabel('Frequency (Hz)')
+ax3.set_ylabel('dB rel. 1pW')
+ax3.set_title("Sound Power Lw")
+ax3.grid(which='both')
+ax3.legend()
 plt.show()
 
 
 # plot the sound power level
-plt.figure()
-plt.semilogx(frequencies, spl, label='1 loudspeaker in infinite baffle')
-# plt.semilogx(frequencies, spl2)
-# plt.semilogx(frequencies, spl3)
-# plt.semilogx(frequencies, spl4)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. 20uPa')     
-plt.title('Sound Presure Level (SPL)')
-plt.grid(which='both')
+fig4, ax4 = plt.subplots()
+ax4.semilogx(frequencies, spl1, label='1 loudspeaker')
+ax4.semilogx(frequencies, spl2, label='2 loudspeakers')
+ax4.semilogx(frequencies, spl3, label='3 loudspeakers')
+ax4.semilogx(frequencies, spl4, label='4 loudspeakers')
+ax4.set_xlabel('Frequency (Hz)')
+ax4.set_ylabel('dB rel. 20uPa')
+ax4.set_title("Sound Pressure Lw")
+ax4.grid(which='both')
+ax4.legend()
 plt.show()
 
 
