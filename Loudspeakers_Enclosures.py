@@ -611,6 +611,7 @@ class BassReflexEnclosure:
         response = np.zeros_like(frequencies)
         Ze = np.zeros_like(frequencies)
         power = np.zeros_like(frequencies)
+        spl = np.zeros_like(frequencies)
 
         for i in range(len(frequencies)):
             Sp, t, fb = self.calculate_port()
@@ -725,8 +726,13 @@ class BassReflexEnclosure:
             )
             W_ref = 10 ** (-12)
             power[i] = 10 * np.log10(W / W_ref)
+           
+            # calculate the sound pressure level
+            prms = R_0 * frequencies[i] * UB
+            pref = 20e-6
+            spl[i] = 20 * np.log10((prms) / (pref))
 
-        return response, Ze, power
+        return response, Ze, power, spl
 
 
 class DodecahedronEnclosure:
@@ -899,8 +905,8 @@ class DodecahedronBassReflexEnclosure:
             Zp = (R_0 * SOUND_CELERITY * ξ) / (self.Sp * 20)
 
             # transmission line matrices method
-            C = np.array([[1, 4 / 3 * Z_e], [0, 1]])
-            E = np.array([[0, 4 * self.lsp.Bl], [1 / (4 * self.lsp.Bl), 0]])
+            C = np.array([[1, 3 / 4 * Z_e], [0, 1]])
+            E = np.array([[0, 3 * self.lsp.Bl], [1 / (3 * self.lsp.Bl), 0]])
             D = np.array([[1, 12 * Z_md], [0, 1]])
             M = np.array(
                 [
@@ -946,7 +952,7 @@ class DodecahedronBassReflexEnclosure:
             UB = (n21 - 1 / Z_a2) * p9
 
             # calculate the system response
-            U_ref = (3 * self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / (
+            U_ref = (4 * self.lsp.e_g * self.lsp.Bl * self.lsp.Sd) / (
                 2 * np.pi * frequencies[i] * self.lsp.Mms * self.lsp.Re
             )
             response[i] = 20 * np.log10((np.abs(UB)) / (np.abs(U_ref)))
