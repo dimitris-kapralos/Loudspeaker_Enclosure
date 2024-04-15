@@ -17,7 +17,7 @@ lsp_parameters = {
     "Mms": 0.0156,
     "Bl": 6.59,
     "radius": 0.045,
-    "height": 0.07,
+    "height": 0.09,
 }
 
 clb_parameters1 = {
@@ -53,41 +53,43 @@ response, impedance, power, spl = enclosure1.calculate_dodecahedron_response(fre
 
 
 # Plot the system response
-plt.figure()
-plt.semilogx(frequencies, response)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. Uref')
-plt.title('System Response')
-plt.grid(which='both')
+fig1, ax1 = plt.subplots()
+ax1.semilogx(frequencies, response, label='1 loudspeaker')
+ax1.set_xlabel('Frequency (Hz)')
+ax1.set_ylabel('dB rel. Uref')
+ax1.set_title('System Response')
+ax1.grid(which='both')
+ax1.legend()
 plt.show()
 
 # Plot the impedance
-plt.figure()
-plt.semilogx(frequencies, impedance)
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('Impedance (Ohms)')
-plt.title('System Impedance')
-plt.grid(which='both')
+fig2, ax2 = plt.subplots()
+ax2.semilogx(frequencies, impedance, label='1 loudspeaker')
+ax2.set_xlabel('Frequency (Hz)')
+ax2.set_ylabel('Impedance (Ohms)')
+ax2.set_title('System Impedance')
+ax2.grid(which='both')
+ax2.legend()
 plt.show()
 
 # Plot the power
-plt.figure()
-plt.semilogx(frequencies, power, label='Docecahedron')
-
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. 1pW')
-plt.title("Sound Power Lw")
-plt.grid(which='both')
+fig3, ax3 = plt.subplots()
+ax3.semilogx(frequencies, power, label='1 loudspeaker')
+ax3.set_xlabel('Frequency (Hz)')
+ax3.set_ylabel('dB rel. 1pW')
+ax3.set_title("Sound Power Lw")
+ax3.grid(which='both')
+ax3.legend()
 plt.show()
 
 
 # plot the sound power level
-plt.figure()
-plt.semilogx(frequencies, spl, label='Dodecahedron')
-plt.xlabel('Frequency (Hz)')
-plt.ylabel('dB rel. 20uPa')     
-plt.title('Sound Presure Level (SPL)')
-plt.grid(which='both')
-plt.show()
+fig4, ax4 = plt.subplots()
+ax4.semilogx(frequencies, spl, label='1 loudspeaker')
+ax4.set_xlabel('Frequency (Hz)')
+ax4.set_ylabel('dB rel. 20uPa')
+ax4.set_title("Sound Pressure Lw")
+ax4.grid(which='both')
+ax4.legend()
 
 
