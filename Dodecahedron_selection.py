@@ -1,7 +1,10 @@
 import numpy as np
 import pygad
+import logging
+import random
 import matplotlib.pyplot as plt
 from Loudspeakers_Enclosures import DodecahedronBassReflexEnclosure
+    
 
 # Define loudspeakers with their characteristics
 loudspeakers = [
@@ -146,6 +149,9 @@ diode_parameters = [
 # Define the number of ports
 num_ports = [5, 10, 15, 20, 25]
 
+random.seed(42)
+random.shuffle(diode_parameters)
+
 
 # Function to calculate sound power
 def calculate_sound_power(
@@ -177,10 +183,13 @@ def fitness_func(ag_instance, solution, solution_idx):
     ports_idx = int(solution[3])
 
     loudspeaker = loudspeakers[loudspeaker_idx]
-
     volume = dodecahedron_volumes[volume_idx]
     diode_param = diode_parameters[diode_idx]
     ports = num_ports[ports_idx]
+    logger.log(logging.INFO, f"{loudspeaker=}")
+    logger.log(logging.INFO, f"{volume=}")
+    logger.log(logging.INFO, f"{diode_param=}")
+    logger.log(logging.INFO, f"{ports=}")
 
     sound_power = calculate_sound_power(
         loudspeaker, clb_par, volume, diode_param, ports
@@ -204,15 +213,24 @@ variable_boundaries = [
 # Create the initial population for the genetic algorithm
 initial_population = np.random.randint(0, len(loudspeakers), (20, 4))
 
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+stream_handler = logging.StreamHandler()
+logger.addHandler(stream_handler)
+
 # Create the genetic algorithm optimizer
 ga_instance = pygad.GA(
     num_generations=20,
-    num_parents_mating=10,
+    num_parents_mating=15,
     fitness_func=fitness_func,
-    sol_per_pop=10,
-    num_genes=7,
+    sol_per_pop=25,
+    num_genes=25,  
     gene_space=variable_boundaries,
     initial_population=initial_population,
+    crossover_type="single_point",
+    mutation_type="random",
+    mutation_percent_genes=10,
+    logger=logger
 )
 
 # Run the genetic algorithm optimization
