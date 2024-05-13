@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from Loudspeakers_Enclosures import DodecahedronBassReflexEnclosure
 import pyswarms as ps
+import itertools
 
 from time import time
 
@@ -25,6 +26,7 @@ loudspeakers = [
         "Bl": 6.59,
         "radius": 0.045,
         "height": 0.09,
+        "r" : 0.065,
     },
     {
         "name": "Speaker 2",
@@ -42,6 +44,7 @@ loudspeakers = [
         "Bl": 4.19,
         "radius": 0.047,
         "height": 0.076,
+        "r" : 0.065,
     },
     {
         "name": "Speaker 3",
@@ -59,6 +62,7 @@ loudspeakers = [
         "Bl": 6.4,
         "radius": 0.045,
         "height": 0.06,
+        "r": 0.05,
     },
     {
         "name": "Speaker 4",
@@ -76,6 +80,7 @@ loudspeakers = [
         "Bl": 6.22,
         "radius": 0.05,
         "height": 0.068,
+        "r": 0.05,
     },
     {
         "name": "Speaker 5",
@@ -93,6 +98,7 @@ loudspeakers = [
         "Bl": 4.52,
         "radius": 0.03,
         "height": 0.057,
+        "r": 0.065,
     },
 ]
 
@@ -112,49 +118,73 @@ clb_par = {
 
 # Define volumes of dodecahedron enclosures
 dodecahedron_volumes = [
-    {"Vab": 10},
-    {"Vab": 15},
-    {"Vab": 20},
-    {"Vab": 25},
-    {"Vab": 30},
-    {"Vab": 40},
-    {"Vab": 50},
+    {"Vab": 10, "rd": 0.13},
+    {"Vab": 15 , "rd": 0.14},
+    {"Vab": 20 , "rd": 0.15},
+    {"Vab": 25 , "rd": 0.16},
+    {"Vab": 30 , "rd": 0.18},
+    {"Vab": 40 , "rd": 0.20},
+    {"Vab": 50 , "rd": 0.23},
 ]
 
-
 # Create an empty list to store all combinations of diode parameters
 diode_parameters = []
 
-t_range = [0.06, 0.01, 0.02, 0.04]
-radius_range = [0.02, 0.01, 0.005, 0.0075]
+t_range = [ 0.038, 0.028, 0.018, 0.023, 0.033]
+radius_range = [0.005, 0.02, 0.0075, 0.01]
+# Create all combinations of diode parameters
+diode_parameters = [
+    {"t": t, "radius": radius} for t, radius in itertools.product(t_range, radius_range)
+]
+
+# print("diode parameters"  ,diode_parameters)
+
 
 # Define the number of ports
-num_ports = [5, 10, 15, 20, 25]
-
-# Create an empty list to store all combinations of diode parameters
-diode_parameters = []
-
-for t in t_range:
-    for radius in radius_range:
-        diode_parameters.append({"t": t, "radius": radius})
+num_ports = [16, 8, 12, 20, 4]
 
 
-# Function to calculate sound power
+
+
+# Function to calculate 1/3 octave bands
+def third_octave_bands(start_freq, stop_freq, num_bands_per_octave):
+    bands = []
+    f1 = start_freq
+    while f1 < stop_freq:
+        bands.append(f1)
+        for i in range(1, num_bands_per_octave):
+            bands.append(f1 * (2 ** (i / (3 * num_bands_per_octave))))
+        f1 *= 2 ** (1 / 3)
+    bands.append(stop_freq)
+    return bands
+
+
+# Define the central frequencies based on provided values
+central_frequencies = [
+    50, 63, 80, 100, 125, 160, 200, 250, 315, 400,
+    500, 630, 800, 1000, 1250, 1600, 2000, 2500, 
+    3150, 4000, 5000, 6300, 8000
+]
+
+# Calculate third octave bands using the provided central frequencies
+frequencies = third_octave_bands(50, 8000, 3)
+
+# Define the range of frequencies for calculation
+frequencies = np.array(frequencies)
+
+# Filter out frequencies outside the desired range
+frequencies = frequencies[(frequencies >= 50) & (frequencies <= 7000)]
+
+
 def calculate_sound_power(
     loudspeaker, clb_parameters, dodecahedron_volumes, diode_parameters, num_ports
 ):
-    octave_steps = 24
-    min_frequency = 1
-    max_frequency = 10000
-    num_points = int(octave_steps * np.log2(max_frequency / min_frequency)) + 1
-    frequencies = np.logspace(
-        np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
-    )
+
     enclosure = DodecahedronBassReflexEnclosure(
         clb_parameters, dodecahedron_volumes, diode_parameters, loudspeaker
     )
     _, _, power, _ = enclosure.calculate_dodecahedron_bass_reflex_response(
-        frequencies, num_ports, 1, 0.3
+        frequencies, num_ports, 3, 0.3
     )
 
     return power
@@ -189,6 +219,14 @@ def objective_function_pso(solution):
         sound_power = calculate_sound_power(
             loudspeaker, clb_par, volume, diode_param, ports
         )
+        
+        for i in range(len(volume)):
+            rd = volume['rd']  # Accessing the 'rd' key directly
+            r = loudspeaker["r"]
+            rho = np.sqrt(rd**2 + r**2)
+            open_angle =  np.arccos( rd / rho ) * 180 / np.pi
+            if open_angle < 23 or open_angle > 31.7:
+                sound_power[i] = 0
 
         diff_from_120dB = np.abs(sound_power - 120)
         fitness = np.mean(diff_from_120dB)
@@ -206,7 +244,7 @@ optimizer = ps.single.GlobalBestPSO(
 
 # Perform optimization
 start_time = time()
-best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=31)
+best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=20)
 end_time = time()
 
 
@@ -226,6 +264,57 @@ print("Loudspeaker:", best_speaker)
 print("Volume:", best_volume)
 print("Diode:", best_diode)
 print("Ports:", best_ports)
+
+# Calculate and print the open angle
+rd = best_volume['rd']
+r = loudspeakers[best_speaker_idx]["r"]
+rho = np.sqrt(rd**2 + r**2)
+open_angle = np.arccos(rd / rho) * 180 / np.pi
+print("Open Angle:", open_angle)
+
+
+
+
+power = calculate_sound_power(
+    loudspeakers[best_speaker_idx], clb_par, best_volume, best_diode, best_ports
+)
+
+# Calculate central frequencies of 1/3 octave bands
+power_1_3_octave = np.zeros(len(central_frequencies) - 1)
+
+
+for j in range(len(central_frequencies) - 1):
+    start_idx = np.argmax(frequencies >= central_frequencies[j])
+    stop_idx = np.argmax(frequencies >= central_frequencies[j + 1])
+
+    power_1_3_octave[j] = np.mean(power[start_idx:stop_idx])
+
+
+# Define the number of bars
+num_bars = len(central_frequencies) - 1
+
+# Create evenly spaced x-coordinates for the bars
+x_values = np.linspace(0, num_bars, num_bars)
+
+# Calculate the bar width based on the number of bars
+bar_width = 0.8
+
+# Define the specific x-axis values to display
+x_ticks = [50, 100, 200, 400, 800, 1600, 3150]
+
+# Create an array to store the indices of central frequencies that correspond to the specified x_ticks
+tick_indices = [central_frequencies.index(x) for x in x_ticks]
+
+
+# Plot the bars with evenly spaced x-coordinates
+plt.bar(np.arange(len(power_1_3_octave)), power_1_3_octave, width=bar_width, align='center')
+plt.xticks(tick_indices, x_ticks)
+plt.title("Best Sound Power")
+plt.xlabel("Frequency (Hz)")
+plt.ylabel('dB rel. 1pW')
+plt.grid(which='both', axis='y')
+plt.show()
+
 
 # Print the optimized solution and fitness
 print("Optimized solution:", best_solution_indices)
