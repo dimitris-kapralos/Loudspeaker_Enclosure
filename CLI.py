@@ -66,7 +66,7 @@ def optimization_menu():
         else:
             print("Invalid choice. Please enter 1 or 0.")
 
-
+# Placeholder function for Individual Analysis menu
 def individual_analysis_menu():
     while True:
         plot_style = None  # Initialize plot_style
@@ -152,15 +152,16 @@ def individual_analysis_menu():
                     run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, num_ports, plot_type, port_length, port_radius)
 
                 plot_again = input("Press 1 if you would you like to plot again: ").strip().lower()
-                if plot_again == '1':
-                    continue
-                elif plot_again != '1':
-                    print("Invalid choice. Please enter 'y' or 'n'.")
+                if plot_again != '1':
+                    print("Invalid choice. Please enter '1' to plot again or '0' to go back.")
                     break  # Continue the loop to prompt for input again
+                elif plot_again == '1':
+                    continue
         elif choice == '0':
             break  # Exit the loop and go back to main menu
         else:
             print("Invalid choice. Please enter 1 or 0.")
+
 
 
 def choose_solid_type():
@@ -493,7 +494,7 @@ def run_simulation_br(enclosure_class, enclosure_params, chosen_solid, diode_par
 
 
 def plot_impendance(frequencies, impedance):
-    fig2, ax2 = plt.subplots()
+    fig, ax2 = plt.subplots()
     ax2.plot(frequencies, impedance)
     ax2.set_xscale('log')
     ax2.set_yscale('linear')
@@ -502,6 +503,10 @@ def plot_impendance(frequencies, impedance):
     ax2.set_ylabel("Impedance (Ohms)")
     ax2.grid(True, which="both", linestyle='--')
     plt.show()
+    if ask_to_save_figure():
+        fig.savefig("impedance_response.png")
+    else:
+        pass
 
 # Unified function to plot power in different scales
 def plot_power(frequencies, power, central_freqs, plot_style):
@@ -525,20 +530,25 @@ def plot_power_1_3_octave(frequencies, power, central_freqs):
 
         power_1_3_octave[j] = np.mean(power[start_idx:stop_idx])
 
-    fig4, ax4 = plt.subplots()
+    fig, ax = plt.subplots()
     bar_width = 0.6
     x_ticks = [50, 100, 200, 400, 800, 1600, 3150]
     tick_indices = [central_freqs.index(x) for x in x_ticks]
 
-    ax4.bar(np.arange(len(power_1_3_octave)), power_1_3_octave, width=bar_width, align="center")
-    ax4.set_xticks(tick_indices)
-    ax4.set_xticklabels(x_ticks)
-    ax4.set_title("Sound Power Lw in 1/3 Octave Bands")
-    ax4.set_xlabel("Frequency (Hz)")
-    ax4.set_ylabel("dB rel. 1pW")
-    ax4.grid(which="both", axis="y")
-    ax4.set_ylim(60, 120)
+    ax.bar(np.arange(len(power_1_3_octave)), power_1_3_octave, width=bar_width, align="center")
+    ax.set_xticks(tick_indices)
+    ax.set_xticklabels(x_ticks)
+    ax.set_title("Sound Power Lw in 1/3 Octave Bands")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("dB rel. 1pW")
+    ax.grid(which="both", axis="y")
+    ax.set_ylim(60, 120)
     plt.show()
+    if ask_to_save_figure():
+        fig.savefig("power_1_3_octave.png")
+    else:
+        pass
+
     
 def plot_power_octave(frequencies, power, central_freqs):
     power_octave = np.zeros(len(central_freqs) - 1)
@@ -563,6 +573,10 @@ def plot_power_octave(frequencies, power, central_freqs):
     ax.grid(which="both", axis="y")
     ax.set_ylim(60, 120)
     plt.show()
+    if ask_to_save_figure():
+        fig.savefig("power_lw_octave.png")
+    else:
+        pass
     
 # Function to plot power in linear scale
 def plot_power_linear(frequencies, power):
@@ -575,6 +589,20 @@ def plot_power_linear(frequencies, power):
     ax.set_ylabel("Power (dB)")
     ax.grid(True, which="both", linestyle='--')
     plt.show()
+    if ask_to_save_figure():
+        fig.savefig("power_lw_linear.png")
+    else:
+        pass    
+    
+def ask_to_save_figure():
+    save_figure = input("Do you want to save the figure? (y/n): ").strip().lower()
+    if save_figure == 'y':
+        return True
+    elif save_figure == 'n':
+        return False
+    else:
+        print("Invalid choice. Please enter 'y' or 'n'.")
+        return ask_to_save_figure()
     
 def suppress_specific_warnings():
     warnings.filterwarnings("ignore", message="Casting complex values to real discards the imaginary part", category=np.ComplexWarning) 
