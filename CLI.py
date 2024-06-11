@@ -149,7 +149,7 @@ def individual_analysis_menu():
                 elif args.solid == 'dodecahedron' and args.enclosure == 'bass reflex':
                     run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_dodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
                 elif args.solid == 'icosidodecahedron' and args.enclosure == 'bass reflex':
-                    run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, num_ports, plot_type, port_length, port_radius)
+                    run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
 
                 plot_again = input("Press 1 if you would you like to plot again: ").strip().lower()
                 if plot_again != '1':
