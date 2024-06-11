@@ -95,8 +95,8 @@ def individual_analysis_menu():
                 if port_length is None:
                     continue  # User chose to go back
 
-                port_diameter = choose_port_diameter()
-                if port_diameter is None:
+                port_radius = choose_port_radius()
+                if port_radius is None:
                     continue  # User chose to go back
 
             edge_length = choose_edge_length()
@@ -106,6 +106,10 @@ def individual_analysis_menu():
             loudspeaker = choose_loudspeaker()
             if loudspeaker is None:
                 continue  # User chose to go back
+            
+            plot_style = choose_plot_style()
+            if plot_style is None:
+                continue
 
             parser = argparse.ArgumentParser()
             args = parser.parse_args([])
@@ -116,28 +120,29 @@ def individual_analysis_menu():
             args.edge = edge_length
             args.loudspeaker = loudspeaker  # Add loudspeaker attribute
             args.params = 'params.json'
+            args.plot_style = plot_style
 
             params = load_params(args.params)
 
             chosen_loudspeaker_params = params['loudspeakers'][args.loudspeaker]
 
-            frequencies, central_frequencies = setup_frequencies()
 
             if args.solid == 'dodecahedron':
                 chosen_dodecahedron = {'edge': args.edge, 'type': 'dodecahedron'}
             else:
                 chosen_icosidodecahedron = {'edge': args.edge, 'type': 'icosidodecahedron'}
 
-            frequencies, central_frequencies = setup_frequencies()
+            frequencies, central_frequencies = setup_frequencies(args.plot_style)
+            
 
             if args.solid == 'dodecahedron' and args.enclosure == 'closed box':
-                run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_dodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies)
+                run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_dodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style)
             elif args.solid == 'icosidodecahedron' and args.enclosure == 'closed box':
-                run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_icosidodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies)
+                run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_icosidodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style)
             elif args.solid == 'dodecahedron' and args.enclosure == 'bass reflex':
-                run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_dodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, num_ports, port_length, port_diameter)
+                run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_dodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, num_ports, port_length, port_radius)
             elif args.solid == 'icosidodecahedron' and args.enclosure == 'bass reflex':
-                run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, num_ports, port_length, port_diameter)
+                run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, num_ports, port_length, port_radius)
 
             input("Press Enter to return to the Individual Analysis Menu...")
         elif choice == '0':
@@ -241,13 +246,13 @@ def choose_port_length():
         else:
             print("Invalid choice. Please enter a number between 0 and 5.")
 
-# Function to choose the diameter of the ports
-def choose_port_diameter():
+# Function to choose the radius of the ports
+def choose_port_radius():
     while True:
         clear_screen()
-        print("Choose Port Diameter:")
+        print("Choose Port radius:")
         print("1. 0.0079 m")
-        print("2. 0.011 m")
+        print("2. 0.0105 m")
         print("3. 0.0133 m")
         print("4. 0.0175 m")
         print("5. 0.0205 m")
@@ -255,16 +260,16 @@ def choose_port_diameter():
 
         choice = input("Enter your choice: ").strip()
 
-        port_diameters = {
+        port_radius = {
             '1': 0.0079,
-            '2': 0.011,
+            '2': 0.0105,
             '3': 0.0133,
             '4': 0.0175,
             '5': 0.0205,
         }
 
-        if choice in port_diameters:
-            return port_diameters[choice]
+        if choice in port_radius:
+            return port_radius[choice]
         elif choice == '0':
             return None
         else:
@@ -328,6 +333,30 @@ def choose_loudspeaker():
             return list(loudspeakers.keys())[int(choice) - 1]
         else:
             print("Invalid choice. Please enter a number between 0 and", len(loudspeakers))
+            
+def choose_plot_style():
+    while True:
+        clear_screen()
+        print("Choose Plot Style:")
+        print("1. 1/3 Octave Bands")
+        print("2. Octave Bands")
+        print("3. Linear Scale")
+        print("0. Back")
+
+        choice = input("Enter your choice: ").strip()
+
+        plot_style = {
+            '1': '1/3 octave',
+            '2': 'octave',
+            '3': 'linear',
+        }
+
+        if choice in plot_style:
+            return plot_style[choice]
+        elif choice == '0':
+            return None
+        else:
+            print("Invalid choice. Please enter a number between 0 and 3.")            
 
 # Function to create the argument parser
 def create_parser():
@@ -339,18 +368,38 @@ def create_parser():
     parser.add_argument('--loudspeaker', type=str, required=True, help='Loudspeaker model to use.')
     parser.add_argument('--enclosure', choices=['closed box', 'bass reflex'], required=True, help='Type of enclosure.')
     parser.add_argument('--params', type=str, default='params.json', help='Path to the JSON file with parameters.')
+    parser.add_argument('--frequency-type', choices=['1/3 octave', 'octave', 'linear'], default='1/3 octave',
+                    help='Type of frequency bands to use in the simulation.')
     
     return parser
 
 # Function to set up frequency bands
-def setup_frequencies():
-    central_frequencies = [
-        50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000,
-        1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000
-    ]
-    frequencies = third_octave_bands(50, 7000, 3)
-    frequencies = np.array(frequencies)
-    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 7000)]
+def setup_frequencies(plot_style):
+    if plot_style == '1/3 octave':
+        central_frequencies = [
+            50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000,
+            1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000
+        ]
+        frequencies = third_octave_bands(50, 7000, 3)
+        frequencies = np.array(frequencies)
+        frequencies = frequencies[(frequencies >= 50) & (frequencies <= 7000)]
+    elif plot_style == 'octave':
+        central_frequencies = [
+            63, 125, 250, 500, 1000, 2000, 4000, 8000
+        ]
+        frequencies = octave_bands(50, 8000, 1)
+        frequencies = np.array(frequencies)
+        frequencies = frequencies[(frequencies >= 50) & (frequencies <= 8000)]        
+    elif plot_style == 'linear':
+        octave_steps = 24 
+        min_frequency = 10
+        max_frequency = 15000
+        num_points = int(octave_steps * np.log2(max_frequency / min_frequency)) + 1
+        frequencies = np.logspace(
+            np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
+        )
+        central_frequencies = None  # Placeholder for linear frequencies
+
     return frequencies, central_frequencies
 
 # Function to calculate 1/3 octave bands
@@ -365,18 +414,43 @@ def third_octave_bands(start_freq, stop_freq, num_bands_per_octave):
     bands.append(stop_freq)
     return bands
 
-# Function to run the simulation
-def run_simulation_cb(enclosure_class, enclosure_params, chosen_solid, loudspeaker_params, frequencies, central_frequencies):
+# Function to calculate octave bands
+def octave_bands(start_freq, stop_freq, num_bands_per_octave):
+    bands = []
+    f1 = start_freq
+    while f1 < stop_freq:
+        bands.append(f1)
+        for i in range(1, num_bands_per_octave):
+            bands.append(f1 * (2 ** (i / (1 * num_bands_per_octave))))
+        f1 *= 2 ** (1 / 1)
+    bands.append(stop_freq)
+    return bands
+
+# Function to run the simulation for Closed Box (CB) enclosures
+def run_simulation_cb(enclosure_class, enclosure_params, chosen_solid, loudspeaker_params, frequencies, central_frequencies, plot_style):
     enclosure = enclosure_class(enclosure_params, chosen_solid, loudspeaker_params)
     response, impedance, power, spl, w = enclosure.calculate_dodecahedron_response(frequencies, 3, 0.3)
-    plot_power_1_3_octave(frequencies, power, central_frequencies)
-    
-def run_simulation_br(enclosure_class, enclosure_params, chosen_solid, diode_params, loudspeaker_params, frequencies, central_frequencies, num_ports, port_length, port_diameter):
+    plot_power(frequencies, power, central_frequencies, plot_style)
+
+# Function to run the simulation for Bass Reflex (BR) enclosures
+def run_simulation_br(enclosure_class, enclosure_params, chosen_solid, diode_params, loudspeaker_params, frequencies, central_frequencies, plot_style, num_ports, port_length, port_radius):
     diode_params['t'] = port_length
-    diode_params['radius'] = port_diameter
+    diode_params['radius'] = port_radius
     enclosure = enclosure_class(enclosure_params, chosen_solid, diode_params, loudspeaker_params)
     response, impedance, power, slp, w = enclosure.calculate_dodecahedron_bass_reflex_response(frequencies, num_ports, 3, 0.3)
-    plot_power_1_3_octave(frequencies, power, central_frequencies)
+    plot_power(frequencies, power, central_frequencies, plot_style)
+
+
+# Unified function to plot power in different scales
+def plot_power(frequencies, power, central_freqs, plot_style):
+    if plot_style == '1/3 octave':
+        plot_power_1_3_octave(frequencies, power, central_freqs)
+    elif plot_style == 'octave':
+        plot_power_octave(frequencies, power, central_freqs)
+    elif plot_style == 'linear':
+        plot_power_linear(frequencies, power)
+    else:
+        print("Invalid frequency type.")
 
 
 # Function to plot power in 1/3 octave bands
@@ -402,6 +476,42 @@ def plot_power_1_3_octave(frequencies, power, central_freqs):
     ax4.set_ylabel("dB rel. 1pW")
     ax4.grid(which="both", axis="y")
     ax4.set_ylim(60, 120)
+    plt.show()
+    
+def plot_power_octave(frequencies, power, central_freqs):
+    power_octave = np.zeros(len(central_freqs) - 1)
+
+    for j in range(len(central_freqs) - 1):
+        start_idx = np.argmax(frequencies >= central_freqs[j])
+        stop_idx = np.argmax(frequencies >= central_freqs[j + 1])
+
+        power_octave[j] = np.mean(power[start_idx:stop_idx])
+
+    fig, ax = plt.subplots()
+    bar_width = 0.8
+    x_ticks = [63, 125, 250, 500, 1000, 2000, 4000]
+    tick_indices = [central_freqs.index(x) for x in x_ticks]
+
+    ax.bar(np.arange(len(power_octave)), power_octave, width=bar_width, align="center")
+    ax.set_xticks(tick_indices)
+    ax.set_xticklabels(x_ticks)
+    ax.set_title("Sound Power Lw in Octave Bands")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("dB rel. 1pW")
+    ax.grid(which="both", axis="y")
+    ax.set_ylim(60, 120)
+    plt.show()
+    
+# Function to plot power in linear scale
+def plot_power_linear(frequencies, power):
+    fig, ax = plt.subplots()
+    ax.plot(frequencies, power, 'b')
+    ax.set_xscale('log')
+    ax.set_yscale('linear')
+    ax.set_title("Sound Power in Linear Scale")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("Power (dB)")
+    ax.grid(True, which="both", linestyle='--')
     plt.show()
     
 def suppress_specific_warnings():
