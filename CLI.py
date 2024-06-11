@@ -108,7 +108,7 @@ def individual_analysis_menu():
                 continue  # User chose to go back
 
             while True:
-                plot_type = choose_plot_type()
+                plot_type = choose_plot_type(enclosure_type)  # Pass enclosure type here
                 if plot_type is None:
                     break  # User chose to go back
 
@@ -133,14 +133,12 @@ def individual_analysis_menu():
 
                 chosen_loudspeaker_params = params['loudspeakers'][args.loudspeaker]
 
-
                 if args.solid == 'dodecahedron':
                     chosen_dodecahedron = {'edge': args.edge, 'type': 'dodecahedron'}
                 else:
                     chosen_icosidodecahedron = {'edge': args.edge, 'type': 'icosidodecahedron'}
 
                 frequencies, central_frequencies = setup_frequencies(args.plot_style, args.plot_type)
-                
 
                 if args.solid == 'dodecahedron' and args.enclosure == 'closed box':
                     run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_dodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
@@ -161,6 +159,7 @@ def individual_analysis_menu():
             break  # Exit the loop and go back to main menu
         else:
             print("Invalid choice. Please enter 1 or 0.")
+
 
 
 
@@ -348,12 +347,14 @@ def choose_loudspeaker():
         else:
             print("Invalid choice. Please enter a number between 0 and", len(loudspeakers))
             
-def choose_plot_type():
+def choose_plot_type(enclosure_type):
     while True:
         clear_screen()
         print("Choose Plot Type:")
         print("1. Impedance Response")
         print("2. Sound Power Lw")
+        if enclosure_type == 'bass reflex':
+            print("3. Port and Diaphragm Response")
         print("0. Back")
 
         choice = input("Enter your choice: ").strip()
@@ -365,10 +366,13 @@ def choose_plot_type():
 
         if choice in plot_type:
             return plot_type[choice]
+        elif choice == '3' and enclosure_type == 'bass reflex':
+            return 'port and diaphragm'
         elif choice == '0':
             return None
         else:
-            print("Invalid choice. Please enter a number between 0 and 2.")            
+            print("Invalid choice. Please enter a number between 0 and", '3' if enclosure_type == 'bass reflex' else '2')
+          
             
 def choose_plot_style():
     while True:
@@ -444,7 +448,16 @@ def setup_frequencies(plot_style, plot_type):
             frequencies = np.logspace(
                 np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
             )
-            central_frequencies = None  # Placeholder for linear frequencies          
+            central_frequencies = None  # Placeholder for linear frequencies 
+    elif plot_type == 'port and diaphragm':
+            octave_steps = 24 
+            min_frequency = 10
+            max_frequency = 15000
+            num_points = int(octave_steps * np.log2(max_frequency / min_frequency)) + 1
+            frequencies = np.logspace(
+                np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
+            )
+            central_frequencies = None                     
 
     return frequencies, central_frequencies
 
@@ -477,7 +490,7 @@ def run_simulation_cb(enclosure_class, enclosure_params, chosen_solid, loudspeak
     enclosure = enclosure_class(enclosure_params, chosen_solid, loudspeaker_params)
     response, impedance, power, spl, w = enclosure.calculate_dodecahedron_response(frequencies, 3, 0.3)
     if plot_type == 'impedance':
-        plot_impendance(frequencies, impedance)
+        plot_impedance(frequencies, impedance)
     elif plot_type == 'power':    
         plot_power(frequencies, power, central_frequencies, plot_style)
 
@@ -486,14 +499,18 @@ def run_simulation_br(enclosure_class, enclosure_params, chosen_solid, diode_par
     diode_params['t'] = port_length
     diode_params['radius'] = port_radius
     enclosure = enclosure_class(enclosure_params, chosen_solid, diode_params, loudspeaker_params)
-    response, impedance, power, slp, w = enclosure.calculate_dodecahedron_bass_reflex_response(frequencies, num_ports, 3, 0.3)
+    response, response_diaphragm, response_port, impedance, power, spl, w = enclosure.calculate_dodecahedron_bass_reflex_response(frequencies, num_ports, 3, 0.3)
+    
     if plot_type == 'impedance':
-        plot_impendance(frequencies, impedance)
+        plot_impedance(frequencies, impedance)
     elif plot_type == 'power':
         plot_power(frequencies, power, central_frequencies, plot_style)
+    elif plot_type == 'port and diaphragm':
+        plot_port_diaphragm_response(frequencies, response_diaphragm, response_port)
 
 
-def plot_impendance(frequencies, impedance):
+
+def plot_impedance(frequencies, impedance):
     fig, ax2 = plt.subplots()
     ax2.plot(frequencies, impedance)
     ax2.set_xscale('log')
@@ -593,6 +610,24 @@ def plot_power_linear(frequencies, power):
         fig.savefig("power_lw_linear.png")
     else:
         pass    
+
+def plot_port_diaphragm_response(frequencies, response_diaphragm, response_port):
+    fig, ax = plt.subplots()
+    ax.plot(frequencies, response_diaphragm, label="Diaphragm Response", color='b')
+    ax.plot(frequencies, response_port, label="Port Response", color='g')
+    ax.set_xscale('log')
+    ax.set_yscale('linear')
+    ax.set_title("Port and Diaphragm Response")
+    ax.set_xlabel("Frequency (Hz)")
+    ax.set_ylabel("Response (dB)")
+    ax.legend()
+    ax.grid(True, which="both", linestyle='--')
+    plt.show()
+    if ask_to_save_figure():
+        fig.savefig("port_diaphragm_response.png")
+    else:
+        pass
+    
     
 def ask_to_save_figure():
     save_figure = input("Do you want to save the figure? (y/n): ").strip().lower()
