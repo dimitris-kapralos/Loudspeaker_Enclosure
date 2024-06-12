@@ -1,24 +1,11 @@
 import argparse
-import json
 import numpy as np
 import matplotlib.pyplot as plt
 import os
 import platform
 import warnings
 from Loudspeakers_Enclosures import DodecahedronEnclosure, DodecahedronBassReflexEnclosure
-
-# Function to load parameters from a JSON file
-def load_params(file_path):
-    try:
-        with open(file_path, 'r') as file:
-            params = json.load(file)
-    except FileNotFoundError:
-        print(f"Error: The file {file_path} was not found.")
-        exit(1)
-    except json.JSONDecodeError:
-        print(f"Error: Failed to decode JSON from {file_path}.")
-        exit(1)
-    return params
+import algorithm_parameters as parameters
 
 # Function to clear the console screen
 def clear_screen():
@@ -27,11 +14,11 @@ def clear_screen():
     else:
         os.system('clear')
 
-# Main menu function
 def main_menu():
     while True:
         clear_screen()
-        print("Main Menu:")
+        print("Welcome to Omni-directional Sources Analysis Software!")
+        print("What would you like to do?")
         print("1. Optimization")
         print("2. Individual Analysis")
         print("0. Exit")
@@ -117,37 +104,26 @@ def individual_analysis_menu():
                     if plot_style is None:
                         continue
 
-                parser = argparse.ArgumentParser()
-                args = parser.parse_args([])
-
-                # Manually set the arguments based on user choices
-                args.solid = solid_type
-                args.enclosure = enclosure_type
-                args.edge = edge_length
-                args.loudspeaker = loudspeaker  
-                args.params = 'params.json'
-                args.plot_type = plot_type
-                args.plot_style = plot_style 
-
-                params = load_params(args.params)
-
-                chosen_loudspeaker_params = params['loudspeakers'][args.loudspeaker]
-
-                if args.solid == 'dodecahedron':
-                    chosen_dodecahedron = {'edge': args.edge, 'type': 'dodecahedron'}
+                # Set up the parameters based on user choices
+                if solid_type == 'dodecahedron':
+                    chosen_solid = {'edge': edge_length, 'type': 'dodecahedron'}
+                    
                 else:
-                    chosen_icosidodecahedron = {'edge': args.edge, 'type': 'icosidodecahedron'}
+                    chosen_solid = {'edge': edge_length, 'type': 'icosidodecahedron'}
+                    
 
-                frequencies, central_frequencies = setup_frequencies(args.plot_style, args.plot_type)
+                frequencies, central_frequencies = setup_frequencies(plot_style, plot_type)
 
-                if args.solid == 'dodecahedron' and args.enclosure == 'closed box':
-                    run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_dodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
-                elif args.solid == 'icosidodecahedron' and args.enclosure == 'closed box':
-                    run_simulation_cb(DodecahedronEnclosure, params['box'], chosen_icosidodecahedron, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
-                elif args.solid == 'dodecahedron' and args.enclosure == 'bass reflex':
-                    run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_dodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
-                elif args.solid == 'icosidodecahedron' and args.enclosure == 'bass reflex':
-                    run_simulation_br(DodecahedronBassReflexEnclosure, params['box'], chosen_icosidodecahedron, params['diode_parameters'], chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
+                chosen_loudspeaker_params = next((speaker for speaker in parameters.list_of_loudspeakers if speaker['name'] == loudspeaker), None)
+
+                if solid_type == 'dodecahedron' and enclosure_type == 'closed box':
+                    run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
+                elif solid_type == 'icosidodecahedron' and enclosure_type == 'closed box':
+                    run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
+                elif solid_type == 'dodecahedron' and enclosure_type == 'bass reflex':
+                    run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
+                elif solid_type == 'icosidodecahedron' and enclosure_type == 'bass reflex':
+                    run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
 
                 plot_again = input("Press 1 if you would you like to plot again: ").strip().lower()
                 if plot_again != '1':
@@ -159,8 +135,6 @@ def individual_analysis_menu():
             break  # Exit the loop and go back to main menu
         else:
             print("Invalid choice. Please enter 1 or 0.")
-
-
 
 
 def choose_solid_type():
@@ -331,10 +305,9 @@ def choose_loudspeaker():
     while True:
         clear_screen()
         print("Choose Loudspeaker:")
-        params = load_params('params.json')
-        loudspeakers = params['loudspeakers']
-        for i, (key, value) in enumerate(loudspeakers.items(), 1):
-            print(f"{i}. {key}")
+        loudspeakers = parameters.list_of_loudspeakers
+        for i, loudspeaker in enumerate(loudspeakers, 1):
+            print(f"{i}. {loudspeaker['name']}")
 
         print("0. Back")
 
@@ -343,9 +316,10 @@ def choose_loudspeaker():
         if choice == '0':
             return None
         elif choice.isdigit() and 1 <= int(choice) <= len(loudspeakers):
-            return list(loudspeakers.keys())[int(choice) - 1]
+            return loudspeakers[int(choice) - 1]['name']
         else:
             print("Invalid choice. Please enter a number between 0 and", len(loudspeakers))
+
             
 def choose_plot_type(enclosure_type):
     while True:
@@ -407,7 +381,6 @@ def create_parser():
     parser.add_argument('--edge', type=float, default=0.1, help='Edge length of the pentagon in meters.')
     parser.add_argument('--loudspeaker', type=str, required=True, help='Loudspeaker model to use.')
     parser.add_argument('--enclosure', choices=['closed box', 'bass reflex'], required=True, help='Type of enclosure.')
-    parser.add_argument('--params', type=str, default='params.json', help='Path to the JSON file with parameters.')
     parser.add_argument('--frequency-type', choices=['1/3 octave', 'octave', 'linear'], default='1/3 octave',
                     help='Type of frequency bands to use in the simulation.')
     
