@@ -146,16 +146,16 @@ def individual_analysis_menu():
         plot_style = None  # Initialize plot_style
         clear_screen()
         print("Individual Analysis Options:")
-        print("1. Choose Solid Type")
-        print("0. Back to main Menu")
+        print("Choose Solid Type:")
+        print("1. Dodecahedron")
+        print("2. Icosidodecahedron")
+        print("0. Back")
 
         choice = input("Enter your choice: ").strip()
 
         if choice == '1':
-            solid_type = choose_solid_type()
-            if solid_type is None:
-                continue  # User chose to go back
-
+            solid_type = 'dodecahedron' 
+            
             enclosure_type = choose_enclosure_type()
             if enclosure_type is None:
                 continue  # User chose to go back
@@ -192,12 +192,8 @@ def individual_analysis_menu():
                         continue
 
                 # Set up the parameters based on user choices
-                if solid_type == 'dodecahedron':
-                    chosen_solid = {'edge': edge_length, 'type': 'dodecahedron'}
-                    
-                else:
-                    chosen_solid = {'edge': edge_length, 'type': 'icosidodecahedron'}
-                    
+                
+                chosen_solid = {'edge': edge_length, 'type': 'dodecahedron'}
 
                 frequencies, central_frequencies = setup_frequencies(plot_style, plot_type)
 
@@ -205,14 +201,65 @@ def individual_analysis_menu():
 
                 if solid_type == 'dodecahedron' and enclosure_type == 'closed box':
                     run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
-                elif solid_type == 'icosidodecahedron' and enclosure_type == 'closed box':
-                    run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
                 elif solid_type == 'dodecahedron' and enclosure_type == 'bass reflex':
-                    run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
-                elif solid_type == 'icosidodecahedron' and enclosure_type == 'bass reflex':
                     run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
 
                 plot_again = input("Press 1 if you would you like to plot again: ").strip().lower()
+                if plot_again != '1':
+                    print("Invalid choice. Please enter '1' to plot again or '0' to go back.")
+                    break  # Continue the loop to prompt for input again
+                elif plot_again == '1':
+                    continue
+        elif choice == '2':
+            solid_type = 'icosidodecahedron'
+            enclosure_type = choose_enclosure_type()
+            if enclosure_type is None:
+                continue  # User chose to go back
+            
+            if enclosure_type == 'bass reflex':
+                num_ports = choose_ports()
+                if num_ports is None:
+                    continue  # User chose to go back
+
+                port_length = choose_port_length()
+                if port_length is None:
+                    continue  # User chose to go back
+
+                port_radius = choose_port_radius()
+                if port_radius is None:
+                    continue  # User chose to go back
+
+            edge_length = choose_edge_length()
+            if edge_length is None:
+                continue  # User chose to go back
+
+            loudspeaker = choose_loudspeaker()
+            if loudspeaker is None:
+                continue  # User chose to go back
+
+            while True:
+                plot_type = choose_plot_type(enclosure_type)  # Pass enclosure type here
+                if plot_type is None:
+                    break  # User chose to go back
+
+                if plot_type == 'power':
+                    plot_style = choose_plot_style()
+                    if plot_style is None:
+                        continue
+
+                # Set up the parameters based on user choices                
+                chosen_solid = {'edge': edge_length, 'type': 'icosidodecahedron'}
+    
+                frequencies, central_frequencies = setup_frequencies(plot_style, plot_type)
+
+                chosen_loudspeaker_params = next((speaker for speaker in parameters.list_of_loudspeakers if speaker['name'] == loudspeaker), None)
+
+                if solid_type == 'icosidodecahedron' and enclosure_type == 'closed box':
+                    run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
+                elif solid_type == 'icosidodecahedron' and enclosure_type == 'bass reflex':
+                    run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
+
+                plot_again = input("Press 1 if you would you like to plot again or press anything to return back: ").strip().lower()
                 if plot_again != '1':
                     print("Invalid choice. Please enter '1' to plot again or '0' to go back.")
                     break  # Continue the loop to prompt for input again
@@ -256,24 +303,6 @@ def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_por
         print("Invalid choice!")
         return None
 
-def choose_solid_type():
-    while True:
-        clear_screen()
-        print("Choose Solid Type:")
-        print("1. Dodecahedron")
-        print("2. Icosidodecahedron")
-        print("0. Back")
-
-        choice = input("Enter your choice: ").strip()
-
-        if choice == '1':
-            return 'dodecahedron'
-        elif choice == '2':
-            return 'icosidodecahedron'
-        elif choice == '0':
-            return None
-        else:
-            print("Invalid choice. Please enter 1, 2, or 0.")
 
 def choose_enclosure_type():
     while True:
