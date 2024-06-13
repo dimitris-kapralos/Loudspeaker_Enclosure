@@ -5,6 +5,9 @@ import os
 import platform
 import warnings
 from Loudspeakers_Enclosures import DodecahedronEnclosure, DodecahedronBassReflexEnclosure
+from PSO import run_pso
+from differential_evolution import run_differential_evolution
+from PyGAD import run_pygad
 import algorithm_parameters as parameters
 
 # Function to clear the console screen
@@ -38,20 +41,104 @@ def main_menu():
 # Placeholder function for Optimization menu
 def optimization_menu():
     while True:
-        clear_screen()
-        print("Optimization Menu:")
-        print("1. Start Optimization (functionality to be implemented)")
-        print("0. Back to Main Menu")
-        
-        choice = input("Enter your choice: ").strip()
-        
-        if choice == '1':
-            print("Optimization functionality will be implemented later.")
-            input("Press Enter to return to the Optimization Menu...")
-        elif choice == '0':
+        clear_screen()  # Clear the console
+        print("Select a source:")
+        print("1. Dodecahedron Closed Box")
+        print("2. Icosidodecahedron Closed Box")
+        print("3. Icosidodecahedron Bass Reflex")
+        print("0. Exit")
+
+        source_choice = input("Enter your choice: ")
+
+        if source_choice == "1":
+            pentagon_edges = parameters.pentagon_edges_dodeca
+            selected_diode_parameters = None
+            selected_ports = None
+        elif source_choice == "2":
+            pentagon_edges = parameters.pentagon_edges_icosi
+            selected_diode_parameters = None
+            selected_ports = None
+        elif source_choice == "3":
+            pentagon_edges = parameters.pentagon_edges_icosi
+            
+            clear_screen()  # Clear the console
+            print("Available port parameters:")
+            for i, params in enumerate(parameters.port_parameters, start=1):
+                print(f"{i}. t: {params['t']}, radius: {params['radius']}")
+            while True:
+                port_params_choice = input("Enter port parameters choice (comma-separated numbers), or enter 'a' to select all: ")
+                if port_params_choice.lower() == "a":
+                    selected_diode_parameters = parameters.port_parameters
+                    break
+                try:
+                    port_params_choices = [int(x.strip()) for x in port_params_choice.split(",")]
+                    selected_diode_parameters = [parameters.port_parameters[i - 1] for i in port_params_choices]
+                    break  # Break the loop if input is valid
+                except (ValueError, IndexError):
+                    print("Invalid input. Please enter valid port parameters or a.")
+            clear_screen()  # Clear the console
+            print("Available number of ports:")
+            for i, num in enumerate(parameters.number_of_ports, start=1):
+                print(f"{i}. {num} ports")
+            while True:
+                ports_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
+                if ports_choice.lower() == "a":
+                    selected_ports = parameters.number_of_ports
+                    break
+                try:
+                    ports_choices = [int(x.strip()) for x in ports_choice.split(",")]
+                    selected_ports = [parameters.number_of_ports[i - 1] for i in ports_choices]
+                    break  # Break the loop if input is valid
+                except (ValueError, IndexError):
+                    print("Invalid input. Please enter valid number of ports or a.")
+
+        elif source_choice == "0":
+            print("Exiting...")
             break
         else:
-            print("Invalid choice. Please enter 1 or 0.")
+            print("Invalid choice") 
+            continue
+
+        clear_screen()  # Clear the console
+
+        print("Available loudspeakers:")
+        for i, speaker in enumerate(parameters.list_of_loudspeakers, start=1):
+            print(f"{i}. {speaker['name']}")
+
+        while True:
+            loudspeaker_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
+            if loudspeaker_choice.lower() == "a":
+                selected_loudspeakers = parameters.list_of_loudspeakers
+                break
+            try:
+                loudspeaker_choices = [int(x.strip()) for x in loudspeaker_choice.split(",")]
+                selected_loudspeakers = [parameters.list_of_loudspeakers[i - 1] for i in loudspeaker_choices]
+                break  # Break the loop if input is valid
+            except (ValueError, IndexError):
+                print("Invalid input. Please enter valid loudspeaker choice.")
+
+        clear_screen()  # Clear the console
+
+        print("Available pentagon edges:")
+        for i, edge in enumerate(pentagon_edges, start=1):
+            print(f"{i}. Edge: {edge['edge']}")
+
+        while True:
+            edge_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
+            if edge_choice.lower() == "a":
+                selected_edges = pentagon_edges
+                break
+            try:
+                edge_choices = [int(x.strip()) for x in edge_choice.split(",")]
+                selected_edges = [pentagon_edges[i - 1] for i in edge_choices]
+                break  # Break the loop if input is valid
+            except (ValueError, IndexError):
+                print("Invalid input. Please enter valid pentagon edges choice.")
+
+        clear_screen()  # Clear the console
+
+        choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports)
+
 
 # Placeholder function for Individual Analysis menu
 def individual_analysis_menu():
@@ -136,6 +223,38 @@ def individual_analysis_menu():
         else:
             print("Invalid choice. Please enter 1 or 0.")
 
+def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_ports):
+    print("Choose Algorithm")
+    print("1. Genetic Algorithm")
+    print("2. Particle Swarm Optimization")
+    print("3. Differential Evolution")
+    
+    choice = int(input("Enter your choice: "))
+    
+    if choice == 1:
+        if source == "1":
+            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
+        elif source == "2":
+            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
+        elif source == "3":
+            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')            
+    elif choice == 2:
+        if source == "1":
+            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        elif source == "2":
+            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        elif source == "3":
+            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')
+    elif choice == 3:
+        if source == "1":
+            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        elif source == "2":
+            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        elif source == "3":
+            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')
+    else:
+        print("Invalid choice!")
+        return None
 
 def choose_solid_type():
     while True:
