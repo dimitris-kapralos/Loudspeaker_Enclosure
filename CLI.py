@@ -46,6 +46,7 @@ def optimization_menu():
         print("1. Dodecahedron Closed Box")
         print("2. Icosidodecahedron Closed Box")
         print("3. Icosidodecahedron Bass Reflex")
+        print("4. All cases")
         print("0. Exit")
 
         source_choice = input("Enter your choice: ")
@@ -54,90 +55,69 @@ def optimization_menu():
             pentagon_edges = parameters.pentagon_edges_dodeca
             selected_diode_parameters = None
             selected_ports = None
+            selected_loudspeakers = choose_loudspeakers()
+            selected_edges = choose_pentagon_edges(pentagon_edges)
+            clear_screen()  # Clear the console
+            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')            
         elif source_choice == "2":
             pentagon_edges = parameters.pentagon_edges_icosi
             selected_diode_parameters = None
             selected_ports = None
+            selected_loudspeakers = choose_loudspeakers()
+            selected_edges = choose_pentagon_edges(pentagon_edges)   
+            clear_screen()  # Clear the console
+            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')         
         elif source_choice == "3":
             pentagon_edges = parameters.pentagon_edges_icosi
-            
+            selected_diode_parameters, selected_ports = choose_port_parameters() 
+            selected_loudspeakers = choose_loudspeakers()
+            selected_edges = choose_pentagon_edges(pentagon_edges)  
+            clear_screen()  # Clear the console                     
+            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'bass_reflex')
+       
+        elif source_choice == "4": 
+            pentagon_edges = parameters.pentagon_edges_dodeca
+            pentagon_edges1 = parameters.pentagon_edges_icosi 
+            selected_diode_parameters = None
+            selected_ports = None
+            selected_diode_parameters1, selected_ports1 = choose_port_parameters()
+            selected_loudspeakers = choose_loudspeakers()
+            print("Choose pentagon edges for Dodecahedron Enclosure")
+            selected_edges = choose_pentagon_edges(pentagon_edges) 
+            print("Choose pentagon edges for Icosidodecahedron Enclosure")
+            selected_edges1 = choose_pentagon_edges(pentagon_edges1) 
             clear_screen()  # Clear the console
-            print("Available port parameters:")
-            for i, params in enumerate(parameters.port_parameters, start=1):
-                print(f"{i}. t: {params['t']}, radius: {params['radius']}")
-            while True:
-                port_params_choice = input("Enter port parameters choice (comma-separated numbers), or enter 'a' to select all: ")
-                if port_params_choice.lower() == "a":
-                    selected_diode_parameters = parameters.port_parameters
-                    break
-                try:
-                    port_params_choices = [int(x.strip()) for x in port_params_choice.split(",")]
-                    selected_diode_parameters = [parameters.port_parameters[i - 1] for i in port_params_choices]
-                    break  # Break the loop if input is valid
-                except (ValueError, IndexError):
-                    print("Invalid input. Please enter valid port parameters or a.")
-            clear_screen()  # Clear the console
-            print("Available number of ports:")
-            for i, num in enumerate(parameters.number_of_ports, start=1):
-                print(f"{i}. {num} ports")
-            while True:
-                ports_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
-                if ports_choice.lower() == "a":
-                    selected_ports = parameters.number_of_ports
-                    break
-                try:
-                    ports_choices = [int(x.strip()) for x in ports_choice.split(",")]
-                    selected_ports = [parameters.number_of_ports[i - 1] for i in ports_choices]
-                    break  # Break the loop if input is valid
-                except (ValueError, IndexError):
-                    print("Invalid input. Please enter valid number of ports or a.")
+            print("For Dodecahedron Closed Box")          
 
-        elif source_choice == "0":
-            print("Exiting...")
-            break
+            results = []       
+                 
+            results.append(choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
+        
+            # clear_screen()  # Clear the console
+            print("For Icosidodecahedron Closed Box")
+            results.append(choose_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
+            
+            # clear_screen()  # Clear the console
+            print("For Icosidodecahedron Bass Reflex")
+            results.append(choose_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters1, selected_ports1, 'bass_reflex'))
+            
+            best_result, best_cost = compare_results(results)
+            
+            print("Best Result:")
+            print(f"Cost: {best_cost}")
+            print(f"Loudspeaker: {best_result[1]}")
+            print(f"Edge: {best_result[2]['edge']}, type: {best_result[2]['type']}")
+            if best_result[3] is not None:
+                print(f"port length: {best_result[3]['t']}, port radius: {best_result[3]['radius']}")
+            if best_result[4] is not None:        
+                print(f"Number of Ports: {best_result[4]}")
+            print(f"Configuration: {best_result[5]}")
+            input("Press any key to return to the main menu...") 
+
+
         else:
             print("Invalid choice") 
             continue
-
-        clear_screen()  # Clear the console
-
-        print("Available loudspeakers:")
-        for i, speaker in enumerate(parameters.list_of_loudspeakers, start=1):
-            print(f"{i}. {speaker['name']}")
-
-        while True:
-            loudspeaker_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
-            if loudspeaker_choice.lower() == "a":
-                selected_loudspeakers = parameters.list_of_loudspeakers
-                break
-            try:
-                loudspeaker_choices = [int(x.strip()) for x in loudspeaker_choice.split(",")]
-                selected_loudspeakers = [parameters.list_of_loudspeakers[i - 1] for i in loudspeaker_choices]
-                break  # Break the loop if input is valid
-            except (ValueError, IndexError):
-                print("Invalid input. Please enter valid loudspeaker choice.")
-
-        clear_screen()  # Clear the console
-
-        print("Available pentagon edges:")
-        for i, edge in enumerate(pentagon_edges, start=1):
-            print(f"{i}. Edge: {edge['edge']}")
-
-        while True:
-            edge_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
-            if edge_choice.lower() == "a":
-                selected_edges = pentagon_edges
-                break
-            try:
-                edge_choices = [int(x.strip()) for x in edge_choice.split(",")]
-                selected_edges = [pentagon_edges[i - 1] for i in edge_choices]
-                break  # Break the loop if input is valid
-            except (ValueError, IndexError):
-                print("Invalid input. Please enter valid pentagon edges choice.")
-
-        clear_screen()  # Clear the console
-
-        choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports)
 
 
 # Placeholder function for Individual Analysis menu
@@ -204,7 +184,7 @@ def individual_analysis_menu():
                 elif solid_type == 'dodecahedron' and enclosure_type == 'bass reflex':
                     run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters,  chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
 
-                plot_again = input("Press 1 if you would you like to plot again: ").strip().lower()
+                plot_again = input("Press 1 if you would you like to plot again or press any key: ").strip().lower()
                 if plot_again != '1':
                     print("Invalid choice. Please enter '1' to plot again or '0' to go back.")
                     break  # Continue the loop to prompt for input again
@@ -269,8 +249,99 @@ def individual_analysis_menu():
             break  # Exit the loop and go back to main menu
         else:
             print("Invalid choice. Please enter 1 or 0.")
+# Function to compare the algorithm results and display the best result
+def compare_results(results):
+    
+    
+    best_result = None
+    best_cost = float('inf')
+    for result in results:
+        cost, speaker, edge, port_param , port, configuration = result
+        if cost < best_cost:
+            best_result = result
+            best_cost = cost
+    clear_screen()  
+    return best_result, best_cost            
+                
 
-def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_ports):
+def choose_pentagon_edges(pentagon_edges):
+
+    print("Available pentagon edges:")
+    for i, edge in enumerate(pentagon_edges, start=1):
+        print(f"{i}. Edge: {edge['edge']}")
+
+    while True:
+        edge_choice = input("Enter number of pentagon edge choice (comma-separated numbers), or enter 'a' to select them all: ")
+        if edge_choice.lower() == "a":
+            selected_edges = pentagon_edges
+            break
+        try:
+            edge_choices = [int(x.strip()) for x in edge_choice.split(",")]
+            selected_edges = [pentagon_edges[i - 1] for i in edge_choices]
+            break  # Break the loop if input is valid
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter valid pentagon edges choice.")
+    clear_screen()
+            
+    return selected_edges            
+
+def choose_loudspeakers():
+    clear_screen()  # Clear the console
+
+    print("Available loudspeakers:")
+    for i, speaker in enumerate(parameters.list_of_loudspeakers, start=1):
+        print(f"{i}. {speaker['name']}")
+
+    while True:
+        loudspeaker_choice = input("Enter number of loudspeakers choice (comma-separated numbers), or enter 'a' to select them all: ")
+        if loudspeaker_choice.lower() == "a":
+            selected_loudspeakers = parameters.list_of_loudspeakers
+            break
+        try:
+            loudspeaker_choices = [int(x.strip()) for x in loudspeaker_choice.split(",")]
+            selected_loudspeakers = [parameters.list_of_loudspeakers[i - 1] for i in loudspeaker_choices]
+            break  # Break the loop if input is valid
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter valid loudspeaker choice.")
+    clear_screen()  # Clear the console
+    return selected_loudspeakers            
+
+def choose_port_parameters():  
+    
+    print("Available port parameters:")
+    for i, params in enumerate(parameters.port_parameters, start=1):
+        print(f"{i}. t: {params['t']}, radius: {params['radius']}")
+    while True:
+        port_params_choice = input("Enter number of port parameters choice (comma-separated numbers), or enter 'a' to select all: ")
+        if port_params_choice.lower() == "a":
+            selected_diode_parameters = parameters.port_parameters
+            break
+        try:
+            port_params_choices = [int(x.strip()) for x in port_params_choice.split(",")]
+            selected_diode_parameters = [parameters.port_parameters[i - 1] for i in port_params_choices]
+            break  # Break the loop if input is valid
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter valid port parameters or a.")
+    clear_screen()  # Clear the console
+    print("Available number of ports:")
+    for i, num in enumerate(parameters.number_of_ports, start=1):
+        print(f"{i}. {num} ports")
+    while True:
+        ports_choice = input("Enter number of ports choice (comma-separated numbers), or enter 'a' to select them all: ")
+        if ports_choice.lower() == "a":
+            selected_ports = parameters.number_of_ports
+            break
+        try:
+            ports_choices = [int(x.strip()) for x in ports_choice.split(",")]
+            selected_ports = [parameters.number_of_ports[i - 1] for i in ports_choices]
+            break  # Break the loop if input is valid
+        except (ValueError, IndexError):
+            print("Invalid input. Please enter valid number of ports or a.") 
+    clear_screen()  # Clear the console            
+    return selected_diode_parameters, selected_ports            
+    
+
+def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_ports, configuration):
     print("Choose Algorithm")
     print("1. Genetic Algorithm")
     print("2. Particle Swarm Optimization")
@@ -279,29 +350,41 @@ def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_por
     choice = int(input("Enter your choice: "))
     
     if choice == 1:
-        if source == "1":
-            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
-        elif source == "2":
-            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
+        if source == "1" or source == "2" :
+           cost, speaker, edge, port_param, port, configuration = run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
         elif source == "3":
-            run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')            
+           cost, speaker, edge, port_param, port, configuration = run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex') 
+        elif source == "4":
+            if configuration == 'closed_box':
+                cost, speaker, edge, port_param, port, configuration = run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)
+            elif configuration == 'bass_reflex':
+                cost, speaker, edge, port_param, port, configuration = run_pygad(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)           
     elif choice == 2:
-        if source == "1":
-            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
-        elif source == "2":
-            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        if source == "1" or source == "2":
+            cost, speaker, edge, port_param, port, configuration = run_pso(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
         elif source == "3":
-            run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')
+            cost, speaker, edge, port_param, port, configuration = run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex') 
+        elif source == "4":
+            if configuration == 'closed_box':
+                cost, speaker, edge, port_param, port, configuration = run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)
+            elif configuration == 'bass_reflex':
+                cost, speaker, edge, port_param, port, configuration = run_pso(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)           
     elif choice == 3:
-        if source == "1":
-            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
-        elif source == "2":
-            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'closed_box')
+        if source == "1" or source == "2":
+           cost, speaker, edge, port_param, port, configuration = run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports,  'closed_box')
         elif source == "3":
-            run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex')
+           cost, speaker, edge, port_param, port, configuration = run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, 'bass_reflex') 
+        elif source == "4":
+            if configuration == 'closed_box':
+               cost, speaker, edge, port_param, port, configuration = run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)
+            elif configuration == 'bass_reflex':
+               cost, speaker, edge, port_param, port, configuration = run_differential_evolution(loudspeakers, pentagon_edges, diode_params, num_ports, configuration)            
     else:
         print("Invalid choice!")
         return None
+    
+    return cost, speaker, edge, port_param , port, configuration
+
 
 
 def choose_enclosure_type():
