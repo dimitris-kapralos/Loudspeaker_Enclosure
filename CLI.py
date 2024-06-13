@@ -8,7 +8,7 @@ from Loudspeakers_Enclosures import DodecahedronEnclosure, DodecahedronBassRefle
 from PSO import run_pso
 from differential_evolution import run_differential_evolution
 from PyGAD import run_pygad
-import algorithm_parameters as parameters
+import parameters as parameters
 
 # Function to clear the console screen
 def clear_screen():
@@ -55,51 +55,51 @@ def optimization_menu():
             pentagon_edges = parameters.pentagon_edges_dodeca
             selected_diode_parameters = None
             selected_ports = None
-            selected_loudspeakers = choose_loudspeakers()
-            selected_edges = choose_pentagon_edges(pentagon_edges)
+            selected_loudspeakers = select_loudspeakers()
+            selected_edges = select_pentagon_edges(pentagon_edges)
             clear_screen()  # Clear the console
-            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')            
+            select_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')            
         elif source_choice == "2":
             pentagon_edges = parameters.pentagon_edges_icosi
             selected_diode_parameters = None
             selected_ports = None
-            selected_loudspeakers = choose_loudspeakers()
-            selected_edges = choose_pentagon_edges(pentagon_edges)   
+            selected_loudspeakers = select_loudspeakers()
+            selected_edges = select_pentagon_edges(pentagon_edges)   
             clear_screen()  # Clear the console
-            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')         
+            select_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box')         
         elif source_choice == "3":
             pentagon_edges = parameters.pentagon_edges_icosi
-            selected_diode_parameters, selected_ports = choose_port_parameters() 
-            selected_loudspeakers = choose_loudspeakers()
-            selected_edges = choose_pentagon_edges(pentagon_edges)  
+            selected_diode_parameters, selected_ports = select_port_parameters() 
+            selected_loudspeakers = select_loudspeakers()
+            selected_edges = select_pentagon_edges(pentagon_edges)  
             clear_screen()  # Clear the console                     
-            choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'bass_reflex')
+            select_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'bass_reflex')
        
         elif source_choice == "4": 
             pentagon_edges = parameters.pentagon_edges_dodeca
             pentagon_edges1 = parameters.pentagon_edges_icosi 
             selected_diode_parameters = None
             selected_ports = None
-            selected_diode_parameters1, selected_ports1 = choose_port_parameters()
-            selected_loudspeakers = choose_loudspeakers()
-            print("Choose pentagon edges for Dodecahedron Enclosure")
-            selected_edges = choose_pentagon_edges(pentagon_edges) 
-            print("Choose pentagon edges for Icosidodecahedron Enclosure")
-            selected_edges1 = choose_pentagon_edges(pentagon_edges1) 
+            selected_diode_parameters1, selected_ports1 = select_port_parameters()
+            selected_loudspeakers = select_loudspeakers()
+            print("Select pentagon edges for Dodecahedron Enclosure")
+            selected_edges = select_pentagon_edges(pentagon_edges) 
+            print("Select pentagon edges for Icosidodecahedron Enclosure")
+            selected_edges1 = select_pentagon_edges(pentagon_edges1) 
             clear_screen()  # Clear the console
             print("For Dodecahedron Closed Box")          
 
             results = []       
                  
-            results.append(choose_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
+            results.append(select_algorithm(source_choice, selected_edges, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
         
             # clear_screen()  # Clear the console
             print("For Icosidodecahedron Closed Box")
-            results.append(choose_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
+            results.append(select_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters, selected_ports, 'closed_box'))
             
             # clear_screen()  # Clear the console
             print("For Icosidodecahedron Bass Reflex")
-            results.append(choose_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters1, selected_ports1, 'bass_reflex'))
+            results.append(select_algorithm(source_choice, selected_edges1, selected_loudspeakers, selected_diode_parameters1, selected_ports1, 'bass_reflex'))
             
             best_result, best_cost = compare_results(results)
             
@@ -113,7 +113,10 @@ def optimization_menu():
                 print(f"Number of Ports: {best_result[4]}")
             print(f"Configuration: {best_result[5]}")
             input("Press any key to return to the main menu...") 
-
+        
+        elif source_choice == "0":
+            print("Exiting...")
+            break
 
         else:
             print("Invalid choice") 
@@ -126,7 +129,7 @@ def individual_analysis_menu():
         plot_style = None  # Initialize plot_style
         clear_screen()
         print("Individual Analysis Options:")
-        print("Choose Solid Type:")
+        print("Select Solid Type:")
         print("1. Dodecahedron")
         print("2. Icosidodecahedron")
         print("0. Back")
@@ -136,38 +139,38 @@ def individual_analysis_menu():
         if choice == '1':
             solid_type = 'dodecahedron' 
             
-            enclosure_type = choose_enclosure_type()
+            enclosure_type = select_enclosure_type()
             if enclosure_type is None:
                 continue  # User chose to go back
             
             if enclosure_type == 'bass reflex':
-                num_ports = choose_ports()
+                num_ports = select_ports()
                 if num_ports is None:
                     continue  # User chose to go back
 
-                port_length = choose_port_length()
+                port_length = select_port_length()
                 if port_length is None:
                     continue  # User chose to go back
 
-                port_radius = choose_port_radius()
+                port_radius = select_port_radius()
                 if port_radius is None:
                     continue  # User chose to go back
 
-            edge_length = choose_edge_length()
+            edge_length = select_edge_length()
             if edge_length is None:
                 continue  # User chose to go back
 
-            loudspeaker = choose_loudspeaker()
+            loudspeaker = select_loudspeaker()
             if loudspeaker is None:
                 continue  # User chose to go back
 
             while True:
-                plot_type = choose_plot_type(enclosure_type)  # Pass enclosure type here
+                plot_type = select_plot_type(enclosure_type)  # Pass enclosure type here
                 if plot_type is None:
                     break  # User chose to go back
 
                 if plot_type == 'power':
-                    plot_style = choose_plot_style()
+                    plot_style = select_plot_style()
                     if plot_style is None:
                         continue
 
@@ -192,38 +195,38 @@ def individual_analysis_menu():
                     continue
         elif choice == '2':
             solid_type = 'icosidodecahedron'
-            enclosure_type = choose_enclosure_type()
+            enclosure_type = select_enclosure_type()
             if enclosure_type is None:
                 continue  # User chose to go back
             
             if enclosure_type == 'bass reflex':
-                num_ports = choose_ports()
+                num_ports = select_ports()
                 if num_ports is None:
                     continue  # User chose to go back
 
-                port_length = choose_port_length()
+                port_length = select_port_length()
                 if port_length is None:
                     continue  # User chose to go back
 
-                port_radius = choose_port_radius()
+                port_radius = select_port_radius()
                 if port_radius is None:
                     continue  # User chose to go back
 
-            edge_length = choose_edge_length()
+            edge_length = select_edge_length()
             if edge_length is None:
                 continue  # User chose to go back
 
-            loudspeaker = choose_loudspeaker()
+            loudspeaker = select_loudspeaker()
             if loudspeaker is None:
                 continue  # User chose to go back
 
             while True:
-                plot_type = choose_plot_type(enclosure_type)  # Pass enclosure type here
+                plot_type = select_plot_type(enclosure_type)  # Pass enclosure type here
                 if plot_type is None:
                     break  # User chose to go back
 
                 if plot_type == 'power':
-                    plot_style = choose_plot_style()
+                    plot_style = select_plot_style()
                     if plot_style is None:
                         continue
 
@@ -264,7 +267,7 @@ def compare_results(results):
     return best_result, best_cost            
                 
 
-def choose_pentagon_edges(pentagon_edges):
+def select_pentagon_edges(pentagon_edges):
 
     print("Available pentagon edges:")
     for i, edge in enumerate(pentagon_edges, start=1):
@@ -285,7 +288,7 @@ def choose_pentagon_edges(pentagon_edges):
             
     return selected_edges            
 
-def choose_loudspeakers():
+def select_loudspeakers():
     clear_screen()  # Clear the console
 
     print("Available loudspeakers:")
@@ -306,7 +309,7 @@ def choose_loudspeakers():
     clear_screen()  # Clear the console
     return selected_loudspeakers            
 
-def choose_port_parameters():  
+def select_port_parameters():  
     
     print("Available port parameters:")
     for i, params in enumerate(parameters.port_parameters, start=1):
@@ -341,8 +344,8 @@ def choose_port_parameters():
     return selected_diode_parameters, selected_ports            
     
 
-def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_ports, configuration):
-    print("Choose Algorithm")
+def select_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_ports, configuration):
+    print("Select Algorithm")
     print("1. Genetic Algorithm")
     print("2. Particle Swarm Optimization")
     print("3. Differential Evolution")
@@ -387,10 +390,10 @@ def choose_algorithm(source, pentagon_edges, loudspeakers, diode_params, num_por
 
 
 
-def choose_enclosure_type():
+def select_enclosure_type():
     while True:
         clear_screen()
-        print("Choose Enclosure Type:")
+        print("Select Enclosure Type:")
         print("1. Closed Box")
         print("2. Bass Reflex")
         print("0. Back")
@@ -406,11 +409,11 @@ def choose_enclosure_type():
         else:
             print("Invalid choice. Please enter 1, 2, or 0.")
 
-# Function to choose the number of ports
-def choose_ports():
+# Function to select the number of ports
+def select_ports():
     while True:
         clear_screen()
-        print("Choose Number of Ports:")
+        print("Select Number of Ports:")
         print("1. 4 Ports")
         print("2. 8 Ports")
         print("3. 12 Ports")
@@ -435,11 +438,11 @@ def choose_ports():
         else:
             print("Invalid choice. Please enter a number between 0 and 5.")
 
-# Function to choose the length of the ports
-def choose_port_length():
+# Function to select the length of the ports
+def select_port_length():
     while True:
         clear_screen()
-        print("Choose Port Length:")
+        print("Select Port Length:")
         print("1. 0.018 m")
         print("2. 0.023 m")
         print("3. 0.028 m")
@@ -464,11 +467,11 @@ def choose_port_length():
         else:
             print("Invalid choice. Please enter a number between 0 and 5.")
 
-# Function to choose the radius of the ports
-def choose_port_radius():
+# Function to select the radius of the ports
+def select_port_radius():
     while True:
         clear_screen()
-        print("Choose Port radius:")
+        print("Select Port radius:")
         print("1. 0.0079 m")
         print("2. 0.0105 m")
         print("3. 0.0133 m")
@@ -493,10 +496,10 @@ def choose_port_radius():
         else:
             print("Invalid choice. Please enter a number between 0 and 5.")
 
-def choose_edge_length():
+def select_edge_length():
     while True:
         clear_screen()
-        print("Choose Pentagon Edge Length:")
+        print("Select Pentagon Edge Length:")
         print("1. 0.10 m")
         print("2. 0.11 m")
         print("3. 0.12 m")
@@ -532,10 +535,10 @@ def choose_edge_length():
             print("Invalid choice. Please enter a number between 0 and 9.")
 
 
-def choose_loudspeaker():
+def select_loudspeaker():
     while True:
         clear_screen()
-        print("Choose Loudspeaker:")
+        print("Select Loudspeaker:")
         loudspeakers = parameters.list_of_loudspeakers
         for i, loudspeaker in enumerate(loudspeakers, 1):
             print(f"{i}. {loudspeaker['name']}")
@@ -552,10 +555,10 @@ def choose_loudspeaker():
             print("Invalid choice. Please enter a number between 0 and", len(loudspeakers))
 
             
-def choose_plot_type(enclosure_type):
+def select_plot_type(enclosure_type):
     while True:
         clear_screen()
-        print("Choose Plot Type:")
+        print("Select Plot Type:")
         print("1. Impedance Response")
         print("2. Sound Power Lw")
         if enclosure_type == 'bass reflex':
@@ -579,13 +582,13 @@ def choose_plot_type(enclosure_type):
             print("Invalid choice. Please enter a number between 0 and", '3' if enclosure_type == 'bass reflex' else '2')
           
             
-def choose_plot_style():
+def select_plot_style():
     while True:
         clear_screen()
-        print("Choose Plot Style:")
+        print("Select Plot Style:")
         print("1. 1/3 Octave Bands")
         print("2. Octave Bands")
-        print("3. Linear Scale")
+        print("3. Logarithmic Scale")
         print("0. Back")
 
         choice = input("Enter your choice: ").strip()
@@ -593,7 +596,7 @@ def choose_plot_style():
         plot_style = {
             '1': '1/3 octave',
             '2': 'octave',
-            '3': 'linear',
+            '3': 'logarithmic',
         }
 
         if choice in plot_style:
@@ -612,7 +615,7 @@ def create_parser():
     parser.add_argument('--edge', type=float, default=0.1, help='Edge length of the pentagon in meters.')
     parser.add_argument('--loudspeaker', type=str, required=True, help='Loudspeaker model to use.')
     parser.add_argument('--enclosure', choices=['closed box', 'bass reflex'], required=True, help='Type of enclosure.')
-    parser.add_argument('--frequency-type', choices=['1/3 octave', 'octave', 'linear'], default='1/3 octave',
+    parser.add_argument('--frequency-type', choices=['1/3 octave', 'octave', 'logarithmic'], default='1/3 octave',
                     help='Type of frequency bands to use in the simulation.')
     
     return parser
@@ -635,7 +638,7 @@ def setup_frequencies(plot_style, plot_type):
             frequencies = octave_bands(50, 8000, 1)
             frequencies = np.array(frequencies)
             frequencies = frequencies[(frequencies >= 50) & (frequencies <= 8000)]        
-        elif plot_style == 'linear':
+        elif plot_style == 'logarithmic':
             octave_steps = 24 
             min_frequency = 10
             max_frequency = 15000
@@ -643,7 +646,7 @@ def setup_frequencies(plot_style, plot_type):
             frequencies = np.logspace(
                 np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
             )
-            central_frequencies = None  # Placeholder for linear frequencies
+            central_frequencies = None  # Placeholder for logarithmic frequencies
     elif plot_type == 'impedance':
             octave_steps = 24 
             min_frequency = 10
@@ -652,7 +655,7 @@ def setup_frequencies(plot_style, plot_type):
             frequencies = np.logspace(
                 np.log2(min_frequency), np.log2(max_frequency), num=num_points, base=2
             )
-            central_frequencies = None  # Placeholder for linear frequencies 
+            central_frequencies = None  # Placeholder for logarithmic frequencies 
     elif plot_type == 'port and diaphragm':
             octave_steps = 24 
             min_frequency = 10
@@ -718,16 +721,13 @@ def plot_impedance(frequencies, impedance):
     fig, ax2 = plt.subplots()
     ax2.plot(frequencies, impedance)
     ax2.set_xscale('log')
-    ax2.set_yscale('linear')
+    ax2.set_yscale('logarithmic')
     ax2.set_title("Impedance Response")
     ax2.set_xlabel("Frequency (Hz)")
     ax2.set_ylabel("Impedance (Ohms)")
     ax2.grid(True, which="both", linestyle='--')
     plt.show()
-    if ask_to_save_figure():
-        fig.savefig("impedance_response.png")
-    else:
-        pass
+
 
 # Unified function to plot power in different scales
 def plot_power(frequencies, power, central_freqs, plot_style):
@@ -735,8 +735,8 @@ def plot_power(frequencies, power, central_freqs, plot_style):
         plot_power_1_3_octave(frequencies, power, central_freqs)
     elif plot_style == 'octave':
         plot_power_octave(frequencies, power, central_freqs)
-    elif plot_style == 'linear':
-        plot_power_linear(frequencies, power)
+    elif plot_style == 'logarithmic':
+        plot_power_logarithmic(frequencies, power)
     else:
         print("Invalid frequency type.")
 
@@ -765,10 +765,6 @@ def plot_power_1_3_octave(frequencies, power, central_freqs):
     ax.grid(which="both", axis="y")
     ax.set_ylim(60, 120)
     plt.show()
-    if ask_to_save_figure():
-        fig.savefig("power_1_3_octave.png")
-    else:
-        pass
 
     
 def plot_power_octave(frequencies, power, central_freqs):
@@ -794,54 +790,34 @@ def plot_power_octave(frequencies, power, central_freqs):
     ax.grid(which="both", axis="y")
     ax.set_ylim(60, 120)
     plt.show()
-    if ask_to_save_figure():
-        fig.savefig("power_lw_octave.png")
-    else:
-        pass
+
     
-# Function to plot power in linear scale
-def plot_power_linear(frequencies, power):
+# Function to plot power in logarithmic scale
+def plot_power_logarithmic(frequencies, power):
     fig, ax = plt.subplots()
     ax.plot(frequencies, power, 'b')
     ax.set_xscale('log')
-    ax.set_yscale('linear')
-    ax.set_title("Sound Power in Linear Scale")
+    ax.set_yscale('logarithmic')
+    ax.set_title("Sound Power in Logarithmic Scale")
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Power (dB)")
     ax.grid(True, which="both", linestyle='--')
     plt.show()
-    if ask_to_save_figure():
-        fig.savefig("power_lw_linear.png")
-    else:
-        pass    
+  
 
 def plot_port_diaphragm_response(frequencies, response_diaphragm, response_port):
     fig, ax = plt.subplots()
     ax.plot(frequencies, response_diaphragm, label="Diaphragm Response", color='b')
     ax.plot(frequencies, response_port, label="Port Response", color='g')
     ax.set_xscale('log')
-    ax.set_yscale('linear')
+    ax.set_yscale('logarithmic')
     ax.set_title("Port and Diaphragm Response")
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("Response (dB)")
     ax.legend()
     ax.grid(True, which="both", linestyle='--')
     plt.show()
-    if ask_to_save_figure():
-        fig.savefig("port_diaphragm_response.png")
-    else:
-        pass
     
-    
-def ask_to_save_figure():
-    save_figure = input("Do you want to save the figure? (y/n): ").strip().lower()
-    if save_figure == 'y':
-        return True
-    elif save_figure == 'n':
-        return False
-    else:
-        print("Invalid choice. Please enter 'y' or 'n'.")
-        return ask_to_save_figure()
     
 def suppress_specific_warnings():
     warnings.filterwarnings("ignore", message="Casting complex values to real discards the imaginary part", category=np.ComplexWarning) 
