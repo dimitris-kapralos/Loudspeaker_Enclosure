@@ -147,9 +147,9 @@ def individual_analysis_menu(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -216,10 +216,32 @@ def individual_analysis_menu(stdscr):
                     elif solid_type == 'icosidodecahedron' and enclosure_type == 'bass reflex':
                         run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)    
                     
-                    else:
-                        stdscr.clear()
-                        stdscr.refresh()
+                    while plot_type == 'power':
+                        plot_style = select_plot_style(stdscr)
+                        if plot_style is None:
+                            break
 
+                        # Set up the parameters based on user choices
+                        chosen_solid = {'edge': edge_length, 'type': solid_type}
+
+                        frequencies, central_frequencies = setup_frequencies(plot_style, plot_type)
+
+                        chosen_loudspeaker_params = next((speaker for speaker in parameters.list_of_loudspeakers if speaker['name'] == loudspeaker), None)
+
+                        if solid_type == 'dodecahedron' and enclosure_type == 'closed box':
+                            run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
+                        elif solid_type == 'dodecahedron' and enclosure_type == 'bass reflex':
+                            run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)
+                        elif solid_type == 'icosidodecahedron' and enclosure_type == 'closed box':
+                            run_simulation_cb(DodecahedronEnclosure, parameters.clb_par, chosen_solid, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type)
+                        elif solid_type == 'icosidodecahedron' and enclosure_type == 'bass reflex':
+                            run_simulation_br(DodecahedronBassReflexEnclosure, parameters.clb_par, chosen_solid, parameters.empty_list_of_port_parameters, chosen_loudspeaker_params, frequencies, central_frequencies, plot_style, plot_type, num_ports, port_length, port_radius)    
+                        
+                        else:
+                            break
+                    else:
+                            stdscr.clear()
+                            stdscr.refresh()
 
 def display_main_menu(stdscr):
     stdscr.clear()
@@ -473,10 +495,10 @@ def select_algorithm(stdscr, source, pentagon_edges, loudspeakers, diode_params,
         for i in range(1, 4):
             if i - 1 == current_row:
                 stdscr.attron(curses.color_pair(1))
-                stdscr.addstr(i, 0, f"{i}. {'Genetic Algorithm' if i == 1 else 'Particle Swarm Optimization' if i == 2 else 'Differential Evolution'}")
+                stdscr.addstr(i, 0, f" {'Genetic Algorithm' if i == 1 else 'Particle Swarm Optimization' if i == 2 else 'Differential Evolution'}")
                 stdscr.attroff(curses.color_pair(1))
             else:
-                stdscr.addstr(i, 0, f"{i}. {'Genetic Algorithm' if i == 1 else 'Particle Swarm Optimization' if i == 2 else 'Differential Evolution'}")
+                stdscr.addstr(i, 0, f" {'Genetic Algorithm' if i == 1 else 'Particle Swarm Optimization' if i == 2 else 'Differential Evolution'}")
 
         stdscr.addstr(5, 0, "Use arrow keys to navigate, Enter to confirm selection, 'h' to return to Optimization Menu : ")
         stdscr.refresh()
@@ -540,7 +562,7 @@ def select_enclosure_type(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    menu_items = ["Closed Box", "Bass Reflex", "Return to Select Solid Type menu"]
+    menu_items = ["Closed Box", "Bass Reflex", "Return to Select Individual Analysis Menu"]
     current_row = 0
 
     while True:
@@ -550,9 +572,9 @@ def select_enclosure_type(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -579,7 +601,7 @@ def select_ports(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    menu_items = ["4 Ports", "8 Ports", "12 Ports", "16 Ports", "20 Ports", "Return to Select Solid Type menu"]
+    menu_items = ["4 Ports", "8 Ports", "12 Ports", "16 Ports", "20 Ports", "Return to Select Individual Analysis Menu"]
     num_ports = [4, 8, 12, 16, 20, None]  # None corresponds to Return option
     current_row = 0
 
@@ -590,9 +612,9 @@ def select_ports(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -613,7 +635,7 @@ def select_port_length(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    menu_items = ["0.018 m", "0.023 m", "0.028 m", "0.033 m", "0.038 m", "Return to Select Solid Type menu"]
+    menu_items = ["0.018 m", "0.023 m", "0.028 m", "0.033 m", "0.038 m", "Return to Select Individual Analysis Menu"]
     port_lengths = [0.018, 0.023, 0.028, 0.033, 0.038, None]  # None corresponds to Return option
     current_row = 0
 
@@ -624,9 +646,9 @@ def select_port_length(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -647,7 +669,7 @@ def select_port_radius(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    menu_items = ["0.0079 m", "0.0105 m", "0.0133 m", "0.0175 m", "0.0205 m", "Return to Select Solid Type menu"]
+    menu_items = ["0.0079 m", "0.0105 m", "0.0133 m", "0.0175 m", "0.0205 m", "Return to Select Individual Analysis Menu"]
     port_radius = [0.0079, 0.0105, 0.0133, 0.0175, 0.0205, None]  # None corresponds to Return option
     current_row = 0
 
@@ -658,9 +680,9 @@ def select_port_radius(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -684,7 +706,7 @@ def select_edge_length(stdscr):
     menu_items = [
         "0.10 m", "0.11 m", "0.12 m", "0.13 m", "0.14 m", 
         "0.15 m", "0.16 m", "0.17 m", "0.18 m", "0.19 m", 
-        "Return to Select Solid Type menu"
+        "Return to Select Individual Analysis Menu"
     ]
     edge_lengths = [0.10, 0.11, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19, None]  # None corresponds to Return option
     current_row = 0
@@ -696,9 +718,9 @@ def select_edge_length(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -721,7 +743,7 @@ def select_loudspeaker(stdscr):
 
     loudspeakers = parameters.list_of_loudspeakers
     menu_items = [loudspeaker['name'] for loudspeaker in loudspeakers]
-    menu_items.append("Return to Select Solid Type menu")
+    menu_items.append("Return to Select Individual Analysis Menu")
     current_row = 0
 
     while True:
@@ -731,9 +753,9 @@ def select_loudspeaker(stdscr):
         # Display menu items
         for idx, item in enumerate(menu_items):
             if idx == current_row:
-                stdscr.addstr(f"{idx + 1}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx + 1}. {item}\n")
+                stdscr.addstr(f" {item}\n")
 
         key = stdscr.getch()
 
@@ -756,19 +778,19 @@ def select_plot_type(enclosure_type, stdscr):
     stdscr.refresh()
 
     if enclosure_type == 'bass reflex':
-        plot_types = ['Impedance', 'Power', 'Port and Diaphragm', 'Return to Select Solid Type menu']
+        plot_types = ['Impedance', 'Sound Power Lw', 'Port and Diaphragm Response', 'Return to Select Individual Analysis Menu']
         plot_type_mappings = {
             '1': 'impedance',
             '2': 'power',
             '3': 'port and diaphragm',
-            '4': 'return to select plot style menu'
+            '4': 'return to select plot style Menu'
         }
     else:
-        plot_types = ['Impedance', 'Power', 'Return to Select Solid Type menu']
+        plot_types = ['Impedance', 'Sound Power LW', 'Return to Individual Analysis Menu']
         plot_type_mappings = {
             '1': 'impedance',
             '2': 'power',
-            '3': 'return to select plot style menu'
+            '3': 'return to select plot style Menu'
         }
     
     current_row = 0  # Initialize current row
@@ -780,9 +802,9 @@ def select_plot_type(enclosure_type, stdscr):
         # Display menu items
         for idx, item in enumerate(plot_types):
             if idx == current_row:
-                stdscr.addstr(f"{idx + 1}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx + 1}. {item}\n")
+                stdscr.addstr(f" {item}\n")
                 
         stdscr.refresh()
         
@@ -808,7 +830,7 @@ def select_plot_style(stdscr):
     stdscr.clear()
     stdscr.refresh()
 
-    plot_styles = ['1/3 Octave Bands', 'Octave Bands', 'Logarithmic Scale', 'Return to Select Plot Type menu']
+    plot_styles = ['1/3 Octave Bands', 'Octave Bands', 'Logarithmic Scale', 'Return to Select Plot Type Menu']
     plot_style_mappings = {
         '1': '1/3 octave',
         '2': 'octave',
@@ -824,9 +846,9 @@ def select_plot_style(stdscr):
         # Display menu items
         for idx, item in enumerate(plot_styles):
             if idx == current_row:
-                stdscr.addstr(f"{idx + 1}. {item}\n", curses.A_REVERSE)
+                stdscr.addstr(f" {item}\n", curses.A_REVERSE)
             else:
-                stdscr.addstr(f"{idx + 1}. {item}\n")
+                stdscr.addstr(f" {item}\n")
                 
         stdscr.refresh()
         
@@ -852,19 +874,19 @@ def setup_frequencies(plot_style, plot_type):
     if plot_type == 'power':
         if plot_style == '1/3 octave':
             central_frequencies = [
-                50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000,
+                20, 25, 31.5, 40, 50, 63, 80, 100, 125, 160, 200, 250, 315, 400, 500, 630, 800, 1000,
                 1250, 1600, 2000, 2500, 3150, 4000, 5000, 6300, 8000
             ]
-            frequencies = third_octave_bands(50, 7000, 3)
+            frequencies = third_octave_bands(20, 8000, 3)
             frequencies = np.array(frequencies)
-            frequencies = frequencies[(frequencies >= 50) & (frequencies <= 7000)]
+            frequencies = frequencies[(frequencies >= 20) & (frequencies <= 8000)]
         elif plot_style == 'octave':
             central_frequencies = [
-                63, 125, 250, 500, 1000, 2000, 4000, 8000
+                31.5, 63, 125, 250, 500, 1000, 2000, 4000, 8000
             ]
-            frequencies = octave_bands(50, 8000, 1)
+            frequencies = octave_bands(31.5, 8000, 1)
             frequencies = np.array(frequencies)
-            frequencies = frequencies[(frequencies >= 50) & (frequencies <= 8000)]        
+            frequencies = frequencies[(frequencies >= 31.5) & (frequencies <= 8000)]        
         elif plot_style == 'logarithmic':
             octave_steps = 24 
             min_frequency = 10
@@ -980,7 +1002,7 @@ def plot_power_1_3_octave(frequencies, power, central_freqs):
 
     fig, ax = plt.subplots()
     bar_width = 0.6
-    x_ticks = [50, 100, 200, 400, 800, 1600, 3150]
+    x_ticks = [25, 50, 100, 200, 400, 800, 1600, 3150]
     tick_indices = [central_freqs.index(x) for x in x_ticks]
 
     ax.bar(np.arange(len(power_1_3_octave)), power_1_3_octave, width=bar_width, align="center")
@@ -990,7 +1012,7 @@ def plot_power_1_3_octave(frequencies, power, central_freqs):
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("dB rel. 1pW")
     ax.grid(which="both", axis="y")
-    ax.set_ylim(60, 120)
+    ax.set_ylim(40, 100)
     plt.show()
 
     
@@ -1005,7 +1027,7 @@ def plot_power_octave(frequencies, power, central_freqs):
 
     fig, ax = plt.subplots()
     bar_width = 0.8
-    x_ticks = [63, 125, 250, 500, 1000, 2000, 4000]
+    x_ticks = [31.5, 63, 125, 250, 500, 1000, 2000, 4000]
     tick_indices = [central_freqs.index(x) for x in x_ticks]
 
     ax.bar(np.arange(len(power_octave)), power_octave, width=bar_width, align="center")
@@ -1015,7 +1037,7 @@ def plot_power_octave(frequencies, power, central_freqs):
     ax.set_xlabel("Frequency (Hz)")
     ax.set_ylabel("dB rel. 1pW")
     ax.grid(which="both", axis="y")
-    ax.set_ylim(60, 120)
+    ax.set_ylim(40, 100)
     plt.show()
 
     
