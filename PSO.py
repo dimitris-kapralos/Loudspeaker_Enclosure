@@ -53,9 +53,9 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
     ]
 
     # Calculate third octave bands using the provided central frequencies
-    frequencies = third_octave_bands(50, 500, 3)
+    frequencies = third_octave_bands(50, 1000, 3)
     frequencies = np.array(frequencies)
-    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 500)]
+    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 1000)]
 
     def calculate_sound_power(
         loudspeaker, clb_parameters, pentagon_edge, port_params, num_of_ports
@@ -127,36 +127,46 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
                 r = loudspeaker["r"]
                 rho = np.sqrt(rd**2 + r**2)
                 open_angle = np.arccos(rd / rho) * 180 / np.pi
-            if edge["type"] == "dodecahedron" and (open_angle < 21 or open_angle > 28):
-                power[i] = -10000
-            elif edge["type"] == "icosidodecahedron" and (
-                open_angle < 21 or open_angle > 26.6
-            ):
-                power[i] = -10000
+                if edge["type"] == "dodecahedron" and (open_angle < 21 or open_angle > 28):
+                    power[i] = -np.inf
+                elif edge["type"] == "icosidodecahedron" and (
+                    open_angle < 18 or open_angle > 26.6
+                ):
+                    power[i] = -np.inf
 
-            total_power = np.sum(power)
             max_power_index = np.argmax(power)
             max_power_freq = frequencies[max_power_index]
 
-            below_resonance_indices = frequencies < max_power_freq
-            below_resonance_power = np.sum(power[below_resonance_indices])
+            # Calculate the sum of power up to the max power frequency
+            up_to_peak_indices = frequencies <= max_power_freq
+            power_up_to_peak = np.sum(power[up_to_peak_indices])
 
-            power_ratio = below_resonance_power / total_power if total_power != 0 else 0
-            log_power_ratio = 10 * np.log10(power_ratio) if power_ratio > 0 else -np.inf
+            # Calculate the sum of power in the same number of 1/3 octave bands after the peak
+            num_bands_before_peak = np.sum(up_to_peak_indices)
+            # include the peak itself
+            remaining_power = power[max_power_index:]
+            after_peak_power = remaining_power[:num_bands_before_peak]
+            power_after_peak = np.sum(after_peak_power) 
 
-            fitness_values.append(-log_power_ratio)
+            # Calculate the ratio
+            power_ratio = power_up_to_peak / power_after_peak 
+            log_power_ratio = 10 * np.log10(power_ratio) 
+
+            fitness_values.append(np.abs(log_power_ratio))
 
         return fitness_values
 
+        
+
     # Initialize PSO optimizer
-    options = {"c1": 1.5, "c2": 1.5, "w": 0.9}
+    options = {"c1": 1, "c2": 1, "w": 0.9}
     dimensions = 4 if configuration == "bass_reflex" else 2
     optimizer = ps.single.GlobalBestPSO(
-        n_particles=15, dimensions=dimensions, options=options, bounds=bounds
+        n_particles=10, dimensions=dimensions, options=options, bounds=bounds
     )
 
     # Perform optimization
-    best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=30)
+    best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=50)
     best_port_param = None
     best_port = None
 
@@ -272,9 +282,12 @@ if __name__ == "__main__":
     ) = run_pso(
         par.list_of_loudspeakers,
         par.pentagon_edges_icosi,
-        port_params=None,
-        num_of_ports=None,
-        configuration="closed_box",
+        port_params=par.port_parameters,
+        num_of_ports=par.number_of_ports,
+        configuration="bass_reflex",
+        # port_params=None,
+        # num_of_ports=None,
+        # configuration="closed_box",
     )
 
     display_results(
