@@ -8,9 +8,26 @@ from differential_evolution import run_differential_evolution
 from PyGAD import run_pygad
 import parameters as parameters
 import warnings
+import platform
 
-def clear_screen():
-    pass  # This function will not be needed with curses
+
+def display_info(stdscr):
+    stdscr.clear()
+    stdscr.addstr(0, 0, "Welcome to Omni-directional Sound Sources Software!")
+    stdscr.addstr(2, 0, "Description:")
+    stdscr.addstr(3, 0, "This software was developed as a thesis project")
+    stdscr.addstr(4, 0, "for Electrical and Computer Engineering.")
+    stdscr.addstr(5, 0, "the aim is to optimize and simulate acoustic measurements of omni-directional sound sources.")
+    stdscr.addstr(7, 0, "Informations:")
+    stdscr.addstr(8, 0, "Thesis Title: Development of software for analysis and modelling of omni-directional audio measurement sources ")
+    stdscr.addstr(9, 0, "Author: Dimitrios Kapralos")
+    stdscr.addstr(10, 0, "Supervisor: Dr. Christos Sevastiadis")
+    stdscr.addstr(12, 0, f"Python Version: {platform.python_version()}")
+    stdscr.addstr(13, 0, f"Curses Version: {curses.version.decode('utf-8')}")
+    stdscr.addstr(14, 0, "Press any key to continue...")
+
+    stdscr.refresh()
+    stdscr.getch()
 
 def main_menu(stdscr):
     curses.curs_set(0)  # Hide cursor
@@ -487,9 +504,9 @@ def select_algorithm(stdscr, source, pentagon_edges, loudspeakers, diode_params,
     while True:
         stdscr.clear()
         stdscr.addstr(0, 0, "Select Algorithm:")
-        stdscr.addstr(1, 0, "1. Genetic Algorithm")
-        stdscr.addstr(2, 0, "2. Particle Swarm Optimization")
-        stdscr.addstr(3, 0, "3. Differential Evolution")
+        stdscr.addstr(1, 0, "Genetic Algorithm")
+        stdscr.addstr(2, 0, "Particle Swarm Optimization")
+        stdscr.addstr(3, 0, "Differential Evolution")
         stdscr.addstr(4, 0, "Enter your choice: ")
         
         for i in range(1, 4):
@@ -1067,9 +1084,8 @@ def plot_port_diaphragm_response(frequencies, response_diaphragm, response_port)
     ax.grid(True, which="both", linestyle='--')
     plt.show()
 
-
-
 def main(stdscr):
+    display_info(stdscr)
     curses.start_color()
     curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
     main_menu(stdscr)
