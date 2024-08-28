@@ -54,12 +54,12 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
     ]
 
     # Calculate third octave bands using the provided central frequencies
-    frequencies = third_octave_bands(50, 600, 3)
+    frequencies = third_octave_bands(50, 2000, 3)
     frequencies = np.array(frequencies)
-    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 600)]
+    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 2000)]
 
     def calculate_sound_power(
-        loudspeaker, clb_parameters, pentagon_edge, port_params, num_of_ports
+        loudspeaker, clb_parameters, pentagon_edge, port_params, num_of_ports, configuration
     ):
         if configuration == "bass_reflex":
             enclosure = DodecahedronBassReflexEnclosure(
@@ -94,14 +94,14 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
             ports = num_of_ports[ports_idx]
 
             lw, power = calculate_sound_power(
-                loudspeaker, par.clb_par, edge, port_param, ports
+                loudspeaker, par.clb_par, edge, port_param, ports, configuration
             )
         elif configuration == "closed_box":
             loudspeaker = loudspeakers[loudspeaker_idx]
             edge = pentagon_edges[edge_idx]
 
             lw, power = calculate_sound_power(
-                loudspeaker, par.clb_par, edge, None, None
+                loudspeaker, par.clb_par, edge, None, None, configuration
             )
 
         for i in range(len(frequencies)):
@@ -111,10 +111,12 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
             open_angle = np.arccos(rd / rho) * 180 / np.pi
             if edge["type"] == "dodecahedron" and (open_angle < 21 or open_angle > 28):
                 power[i] = -np.inf
+                lw[i] = -np.inf
             elif edge["type"] == "icosidodecahedron" and (
-                open_angle < 19 or open_angle > 26.6
+                open_angle < 20 or open_angle > 26.6
             ):
                 power[i] = -np.inf
+                lw[i] = -np.inf
 
         max_power_index = np.argmax(power)
         max_power_freq = frequencies[max_power_index]
@@ -134,7 +136,12 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
         power_ratio = power_up_to_peak / power_after_peak 
         log_power_ratio = 10 * np.log10(power_ratio) if power_ratio > 0 else -np.inf
 
-        fitness_values.append(log_power_ratio)
+        # total_power = np.sum(lw) 
+        avarage_power = np.mean(lw)
+        
+        total = 0.5 * avarage_power + 0.5 * log_power_ratio
+        
+        fitness_values.append((total))
 
         return fitness_values
 
@@ -154,7 +161,7 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
         num_genes = 2
 
     # Define the number of samples you want to generate
-    num_samples = 15
+    num_samples = 150
 
     # Generate random samples of combinations
     random_samples = []
@@ -168,12 +175,12 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
     # Create the genetic algorithm optimizer
     ga_instance = pygad.GA(
         num_generations=30,
-        num_parents_mating=2,
+        num_parents_mating=20,
         fitness_func=fitness_func,
         num_genes=num_genes,
         gene_space=variable_boundaries,
         initial_population=initial_population,
-        crossover_type="single_point",
+        crossover_type="two_points",
         mutation_type="random",
         mutation_probability=0.25,
     )
@@ -207,6 +214,7 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
             best_edge,
             best_port_param,
             best_port,
+            configuration
         )
     else:
         best_speaker_idx, best_edge_idx = best_solution_indices.astype(int)
@@ -216,7 +224,7 @@ def run_pygad(loudspeakers, pentagon_edges, port_params, num_of_ports, configura
         best_edge = pentagon_edges[int(best_edge_idx)]
 
         power = calculate_sound_power(
-            loudspeakers[int(best_speaker_idx)], par.clb_par, best_edge, None, None
+            loudspeakers[int(best_speaker_idx)], par.clb_par, best_edge, None, None, configuration
         )
 
     # Calculate and print the open angle
@@ -323,4 +331,4 @@ if __name__ == "__main__":
         open_angle,
         time_passed,
     )
-    #
+    

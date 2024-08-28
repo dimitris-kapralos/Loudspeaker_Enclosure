@@ -53,9 +53,9 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
     ]
 
     # Calculate third octave bands using the provided central frequencies
-    frequencies = third_octave_bands(50, 1000, 3)
+    frequencies = third_octave_bands(50, 2000, 3)
     frequencies = np.array(frequencies)
-    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 1000)]
+    frequencies = frequencies[(frequencies >= 50) & (frequencies <= 2000)]
 
     def calculate_sound_power(
         loudspeaker, clb_parameters, pentagon_edge, port_params, num_of_ports
@@ -73,7 +73,7 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
             enclosure = DodecahedronEnclosure(
                 clb_parameters, pentagon_edge, loudspeaker
             )
-            _, _, _, lw, power = enclosure.calculate_dodecahedron_response(
+            _, _, lw, _, power = enclosure.calculate_dodecahedron_response(
                 frequencies, 3, 0.3
             )
         return lw, power
@@ -129,10 +129,12 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
                 open_angle = np.arccos(rd / rho) * 180 / np.pi
                 if edge["type"] == "dodecahedron" and (open_angle < 21 or open_angle > 28):
                     power[i] = -np.inf
+                    lw[i] = -np.inf
                 elif edge["type"] == "icosidodecahedron" and (
-                    open_angle < 18 or open_angle > 26.6
+                    open_angle < 19 or open_angle > 26.6
                 ):
                     power[i] = -np.inf
+                    lw[i] = -np.inf
 
             max_power_index = np.argmax(power)
             max_power_freq = frequencies[max_power_index]
@@ -152,7 +154,11 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
             power_ratio = power_up_to_peak / power_after_peak 
             log_power_ratio = 10 * np.log10(power_ratio) 
 
-            fitness_values.append(np.abs(log_power_ratio))
+            avarage_power = np.mean(lw)
+            
+            total = 0.5 * log_power_ratio + 0.5 * avarage_power
+            
+            fitness_values.append(-total)
 
         return fitness_values
 
@@ -166,7 +172,7 @@ def run_pso(loudspeakers, pentagon_edges, port_params, num_of_ports, configurati
     )
 
     # Perform optimization
-    best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=50)
+    best_cost, best_solution = optimizer.optimize(objective_function_pso, iters=30)
     best_port_param = None
     best_port = None
 
@@ -266,6 +272,7 @@ def display_results(
     print(f"Took: {time_passed} seconds")
     return None
 
+    
 
 if __name__ == "__main__":
 

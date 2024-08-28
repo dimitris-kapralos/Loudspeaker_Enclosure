@@ -110,11 +110,13 @@ def run_differential_evolution(
             r = loudspeaker["r"]
             rho = np.sqrt(rd**2 + r**2)
             open_angle = np.arccos(rd / rho) * 180 / np.pi
-            if edge["type"] == "dodecahedron" and (open_angle < 20 or open_angle > 28):
+            if edge["type"] == "dodecahedron" and (open_angle < 21 or open_angle > 28):
+                lw[i] = -np.inf
                 power[i] = -np.inf
             elif edge["type"] == "icosidodecahedron" and (
-                open_angle < 18 or open_angle > 26.6
+                open_angle < 19 or open_angle > 26.6
             ):
+                lw[i] = -np.inf
                 power[i] = -np.inf
 
         max_power_index = np.argmax(power)
@@ -135,7 +137,12 @@ def run_differential_evolution(
         power_ratio = power_up_to_peak / power_after_peak 
         log_power_ratio = 10 * np.log10(power_ratio) if power_ratio > 0 else -np.inf
 
-        fitness_values.append(np.abs(log_power_ratio))
+        # total_power = np.sum(lw) 
+        avarage_power = np.mean(lw)
+        
+        total = 0.5 * avarage_power + 0.5 * log_power_ratio
+        
+        fitness_values.append((-total))
 
         return fitness_values
 
@@ -163,8 +170,8 @@ def run_differential_evolution(
         objective_function,
         bounds,
         strategy="randtobest1bin",
-        maxiter=30,  # Increase the number of iterations
-        popsize=10,
+        maxiter=20,  # Increase the number of iterations
+        popsize=20,
         mutation=(0.5, 1),
         polish=True,
         tol=1e-5,
