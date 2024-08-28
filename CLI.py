@@ -266,12 +266,21 @@ def display_main_menu(stdscr):
     stdscr.refresh()
 
 def compare_results(results):
-    best_cost = float('inf')
+    # compare the results based on the cost and return the configuration with the best cost
+    best_cost = float('-inf')
     for result in results:
         cost, speaker, edge, port_param, port, configuration, open_angle, time_passed = result
-        if cost < best_cost:
-            best_cost = cost
+        if np.abs(cost) > best_cost:
+            best_cost = np.abs(cost)
     return best_cost, speaker, edge, port_param, port, configuration, open_angle, time_passed
+    
+    
+    # best_cost = float('-inf')
+    # for result in results:
+    #     cost, speaker, edge, port_param, port, configuration, open_angle, time_passed = result
+    #     if np.abs(cost) > best_cost:
+    #         best_cost = np.abs(cost)
+    # return best_cost, speaker, edge, port_param, port, configuration, open_angle, time_passed
 
 def display_results(stdscr, cost, speaker, edge, port_param, port, configuration, open_angle, time_passed):
     if cost is not None:
@@ -281,6 +290,7 @@ def display_results(stdscr, cost, speaker, edge, port_param, port, configuration
         stdscr.addstr(2, 0, f"Loudspeaker: {speaker}")
         stdscr.addstr(3, 0, f"Pentagon Edge: {edge['edge']} cm, Type: {edge['type']}")
         if port_param is not None:
+
             stdscr.addstr(4, 0, f"Port Parameters: Length: {port_param['length']} cm, Radius: {port_param['radius']} cm")
         else:
             stdscr.addstr(4, 0, "Port Parameters: None")                        
